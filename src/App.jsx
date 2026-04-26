@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function App() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const overviewRef = useRef(null);
 
   const navItems = ["Login", "Create an Account"];
 
@@ -15,6 +16,10 @@ function App() {
     } else {
       navigate("/CreateAccount");
     }
+  };
+
+  const scrollToOverview = () => {
+    overviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
@@ -36,6 +41,7 @@ function App() {
 
           {/* MOBILE BUTTON */}
           <button
+            type="button"
             className="md:hidden border px-4 py-2 rounded-full"
             onClick={() => setOpen(!open)}
           >
@@ -48,6 +54,7 @@ function App() {
               {navItems.map((item) => (
                 <li key={item}>
                   <button
+                    type="button"
                     className="cursor-pointer rounded-full px-4 py-2 text-sm font-medium hover:bg-slate-100"
                     onClick={() => handleNavigation(item)}
                   >
@@ -67,6 +74,7 @@ function App() {
                 {navItems.map((item) => (
                   <li key={item}>
                     <button
+                      type="button"
                       className="block w-full rounded-2xl px-4 py-3 text-left text-sm hover:bg-slate-100"
                       onClick={() => handleNavigation(item)}
                     >
@@ -102,17 +110,25 @@ function App() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button className="cursor-pointer rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800">
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800"
+                  onClick={() => navigate("/login")}
+                >
                   Get Started
                 </button>
-                <button className="cursor-pointer rounded-full border px-6 py-3 hover:bg-slate-300">
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-full border px-6 py-3 hover:bg-slate-300"
+                  onClick={scrollToOverview}
+                >
                   Read Overview
                 </button>
               </div>
             </div>
 
             {/* RIGHT CARD */}
-            <aside>
+            <aside ref={overviewRef}>
               <div className="rounded-2xl border bg-white p-6 shadow-xl">
                 <h3 className="text-xl font-bold">
                   Academic Resource Organization
