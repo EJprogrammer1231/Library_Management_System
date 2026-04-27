@@ -1,6 +1,14 @@
+import { useEffect } from "react";
 import logo from "./assets/Logo.png";
 
 function Layout() {
+  useEffect(() => {
+    fetch("http://localhost:5000/books")
+      .then((res) => res.json())
+      .then((data) => console.log(data))
+      .catch((error) => console.error("Failed to load books:", error));
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-100">
 
@@ -59,7 +67,7 @@ function Layout() {
         {/* CONTENT */}
         <main className="p-6">
           <p className="text-gray-600">
-            Your dashboard content goes here...
+            continue......
           </p>
         </main>
 
