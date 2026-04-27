@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import logo from "./assets/Logo.png";
 
 function Layout() {
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
     fetch("http://localhost:5000/books")
       .then((res) => res.json())
@@ -10,10 +12,14 @@ function Layout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
 
       {/* ===== ASIDE ===== */}
-      <aside className="w-64 bg-white flex flex-col">
+      <aside className={`
+        fixed md:static top-0 left-0 h-full w-64 bg-white flex flex-col z-50
+        transform transition-transform duration-300
+        ${open ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}>
 
         {/* Logo */}
         <div className="flex items-center gap-3 p-4">
@@ -41,15 +47,45 @@ function Layout() {
 
       </aside>
 
+      {/* Overlay (click to close) */}
+      {open && (
+        <div 
+          className="fixed inset-0 bg-black/30 md:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       {/* ===== MAIN ===== */}
       <div className="flex-1 flex flex-col">
 
         {/* HEADER */}
-        <header className="flex items-center justify-between px-6 py-3 bg-white">
+        <header className="flex items-center justify-between px-4 md:px-6 py-3 bg-white">
           
+          {/* Menu Button (mobile only) */}
+          <button 
+            className="md:hidden text-xl"
+            onClick={() => setOpen(true)}
+          >
+            ☰
+          </button>
+
           <h1 className="text-lg font-semibold text-gray-800">
             Hi, <span>Students</span>
           </h1>
+
+          {/* Search */}
+          <div className="hidden md:flex">
+            <input 
+              type="text" 
+              placeholder="Find materials..." 
+              className="px-3 py-1 border rounded-lg text-sm outline-none w-80"
+            />
+            <button 
+              className="ml-2 px-4 py-1 bg-blue-600 text-white rounded-sm text-sm hover:bg-blue-700 transition"
+            >
+              Search
+            </button>
+          </div>
 
           {/* Profile */}
           <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg">
@@ -65,10 +101,12 @@ function Layout() {
         </header>
 
         {/* CONTENT */}
-        <main className="p-6">
-          <p className="text-gray-600">
-            continue......
-          </p>
+        <main className="p-4 md:p-6">
+          <div>
+            <div>1</div>
+            <div>2</div>
+            <div>3</div>
+          </div>
         </main>
 
       </div>
