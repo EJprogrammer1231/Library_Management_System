@@ -4,6 +4,12 @@ import logo from "./assets/Logo.png";
 function Layout() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const stats = [
+    { label: "Total Books", value: "1,428", note: "All available records" },
+    { label: "Borrowed", value: "1,200", note: "Currently checked out" },
+    { label: "Reserved", value: "300", note: "Waiting for pickup" },
+    { label: "Returned", value: "128", note: "Recently returned" },
+  ];
 
   useEffect(() => {
     fetch("http://localhost:5000/books")
@@ -125,12 +131,25 @@ function Layout() {
         </header>
 
         {/* CONTENT */}
-        <main className="p-4 md:p-6">
-          <div>
-            <div>1</div>
-            <div>2</div>
-            <div>3</div>
-          </div>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat) => (
+              <article
+                key={stat.label}
+                className="rounded-xl border border-gray-300 bg-white p-4"
+              >
+                <span className="block text-sm font-medium text-gray-500">
+                  {stat.label}
+                </span>
+                <span className="mt-2 block text-3xl font-semibold text-gray-900">
+                  {stat.value}
+                </span>
+                <span className="mt-1 block text-xs text-gray-500">
+                  {stat.note}
+                </span>
+              </article>
+            ))}
+          </section>
         </main>
       </div>
     </div>
