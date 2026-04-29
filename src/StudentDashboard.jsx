@@ -5,10 +5,10 @@ function Layout() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const stats = [
-    { label: "Total Books", value: "1,428", note: "All available records" },
-    { label: "Borrowed", value: "1,200", note: "Currently checked out" },
-    { label: "Reserved", value: "300", note: "Waiting for pickup" },
-    { label: "Returned", value: "128", note: "Recently returned" },
+    { label: "Total Books", value: "0", note: "All available records" },
+    { label: "Borrowed", value: "0", note: "Currently checked out" },
+    { label: "Reserved", value: "0", note: "Waiting for pickup" },
+    { label: "Returned", value: "0", note: "Recently returned" },
   ];
 
   useEffect(() => {
@@ -44,7 +44,7 @@ function Layout() {
           <img src={logo} className="h-12 w-12" alt="logo" />
           <div className="leading-tight">
             <span className="block text-sm font-bold">SUMULONG COLLEGE</span>
-            <span className="block text-xs text-gray-500">
+            <span className="block text-xs font-medium text-gray-500">
               OF ARTS AND SCIENCE
             </span>
           </div>
@@ -150,6 +150,21 @@ function Layout() {
               </article>
             ))}
           </section>
+
+          {/* for a books recntly added and can view by a students */}
+          <main>
+            {/* Responsive row: stacks on small screens, stays side-by-side on larger screens */}
+            <section className="mt-4 flex flex-col justify-between gap-3 rounded-lg border-gray-300 bg-white p-4 sm:flex-row sm:items-center">
+              {/* Button width becomes full on mobile for easier tapping */}
+              <button className="cursor-pointer rounded bg-gray-200 p-2 text-sm text-gray-800 hover:bg-gray-300 sm:w-auto w-full">
+                View all Books
+              </button>
+              {/* Text also stretches on mobile so it aligns neatly under the button */}
+              <span className="cursor-pointer rounded text-sm text-gray-500 hover:bg-gray-300 sm:w-auto w-full">
+                recently added
+                </span>
+            </section>
+          </main>
         </main>
       </div>
     </div>
