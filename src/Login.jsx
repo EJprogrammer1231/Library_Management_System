@@ -2,15 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
+
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
   });
+  
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [showRecoveryHint, setShowRecoveryHint] = useState(false);
-  // Added loading state so the Sign In action feels polished and intentional.
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pageBackground = {
     background:
@@ -22,10 +24,12 @@ function Login() {
     const identifier = values.identifier.trim();
     const password = values.password;
 
+    {/* Input validation */}
     if (!identifier) {
       nextErrors.identifier = "Username or email is required.";
     } else if (identifier.includes("@")) {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
       if (!emailPattern.test(identifier)) {
         nextErrors.identifier = "Enter a valid email address.";
       }
@@ -185,7 +189,7 @@ function Login() {
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                "Login"
               )}
             </button>
 

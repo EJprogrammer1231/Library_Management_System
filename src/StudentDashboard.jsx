@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import logo from "./assets/Logo.png";
+import books1 from "./assets/books1.png";
+import books2 from "./assets/books2.png";
+import books3 from "./assets/books3.png";
+import books4 from "./assets/books4.png";
 
 function Layout() {
   const [open, setOpen] = useState(false);
@@ -9,6 +13,12 @@ function Layout() {
     { label: "Borrowed", value: "0", note: "Currently checked out" },
     { label: "Reserved", value: "0", note: "Waiting for pickup" },
     { label: "Returned", value: "0", note: "Recently returned" },
+  ];
+  const books = [
+    { title: "Atomic Habits", author: "James Clear", image: books1 },
+    { title: "Clean Code", author: "Robert C. Martin", image: books2 },
+    { title: "The Alchemist", author: "Paulo Coelho", image: books3 },
+    { title: "Rich Dad Poor Dad", author: "Robert T. Kiyosaki", image: books4 },
   ];
 
   useEffect(() => {
@@ -53,11 +63,9 @@ function Layout() {
         {/* Menu */}
         <nav className="flex-1 space-y-2 p-4">
           <MenuItem label="Dashboard" active/>
+          <MenuItem label="All Books" />
           <MenuItem label="Course Materials" />
-          <MenuItem label="Search Materials" />
-          <MenuItem label="My Borrowed" />
           <MenuItem label="Announcements" />
-          <MenuItem label="Help" />
           <MenuItem label="Profile" />
           <MenuItem label="Settings" />
           <MenuItem label="Logout" />
@@ -102,7 +110,7 @@ function Layout() {
               </div>
               <div className="text-sm">
                 <span className="block font-medium text-gray-800">Student</span>
-                <span className="block text-xs text-gray-500">BSIT 2A</span>
+                <span className="block text-xs text-gray-500">BSIT-2</span>
               </div>
             </div>
           </div>
@@ -123,7 +131,7 @@ function Layout() {
             <button 
               id="button-search"
               type="submit"
-              className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 cursor-pointer"
+              className="shrink-0 rounded-lg bg-gray-600 px-4 py-2 text-sm text-white transition hover:bg-gray-500 cursor-pointer"
             >
               Search
             </button>
@@ -153,17 +161,49 @@ function Layout() {
 
           {/* for a books recntly added and can view by a students */}
           <main>
-            {/* Responsive row: stacks on small screens, stays side-by-side on larger screens */}
-            <section className="mt-4 flex flex-col justify-between gap-3 rounded-lg border-gray-300 bg-white p-4 sm:flex-row sm:items-center">
-              {/* Button width becomes full on mobile for easier tapping */}
+            <section className="mt-4 flex flex-col justify-between gap-3 rounded-lg border border-gray-300 bg-white p-4 sm:flex-row sm:items-center">
               <button className="cursor-pointer rounded bg-gray-200 p-2 text-sm text-gray-800 hover:bg-gray-300 sm:w-auto w-full">
                 View all Books
               </button>
-              {/* Text also stretches on mobile so it aligns neatly under the button */}
               <span className="cursor-pointer rounded text-sm text-gray-500 hover:bg-gray-300 sm:w-auto w-full">
-                recently added
+                Weekly added
                 </span>
             </section>
+
+            {/* Books images */}
+            <section className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {books.map((book) => (
+                <article
+                  key={book.title}
+                  className="group cursor-pointer overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 transition duration-300 hover:-translate-y-1 hover:bg-gray-50 hover:shadow-xl hover:ring-gray-300"
+                >
+                  <div className="aspect-3/4 w-full overflow-hidden bg-gray-100">
+                    <img
+                      src={book.image}
+                      alt={book.title}
+                      className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-105"
+                    />
+                  </div>
+
+                  <div className="space-y-2 p-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        {book.title}
+                      </h3>
+                      <p className="text-xs text-gray-500">{book.author}</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="w-full cursor-pointer rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition duration-200 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </section>
+
           </main>
         </main>
       </div>
