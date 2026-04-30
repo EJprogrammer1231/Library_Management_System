@@ -8,7 +8,7 @@ import CreateAccount from './CreateAccount.jsx'
 import Dashboard from './StudentDashboard.jsx'
 import ChooseCategory from './choose-category.jsx'
 import LoginAdmin from './loginAdmin.jsx'
-import AdminDashboard from './adminDashborad.jsx'
+import AdminDashboard from './AdminDashborad.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
