@@ -12,7 +12,7 @@ function App() {
     setOpen(false);
 
     if (item === "Login") {
-      navigate("/login");
+      navigate("/ChooseCategory");
     } else {
       navigate("/CreateAccount");
     }
@@ -113,7 +113,6 @@ function App() {
                 <button
                   type="button"
                   className="cursor-pointer rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800"
-                  onClick={() => navigate("/login")}
                 >
                   Get Started
                 </button>

@@ -11,7 +11,7 @@ function Layout() {
   const stats = [
     { label: "Total Books", value: "0", note: "All available records" },
     { label: "Borrowed", value: "0", note: "Currently checked out" },
-    { label: "Reserved", value: "0", note: "Waiting for pickup" },
+    { label: "Reserved", value: "0", note: "Books you reserved" },
     { label: "Returned", value: "0", note: "Recently returned" },
   ];
   const books = [
