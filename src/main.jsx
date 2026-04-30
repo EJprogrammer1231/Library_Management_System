@@ -8,6 +8,7 @@ import CreateAccount from './CreateAccount.jsx'
 import Dashboard from './StudentDashboard.jsx'
 import ChooseCategory from './choose-category.jsx'
 import LoginAdmin from './loginAdmin.jsx'
+import AdminDashboard from './adminDashborad.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/StudentDashboard" element={<Dashboard />} />
         <Route path="/ChooseCategory" element={<ChooseCategory />} />
         <Route path="/loginAdmin" element={<LoginAdmin />} />
+        <Route path="/AdminDashboard" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
