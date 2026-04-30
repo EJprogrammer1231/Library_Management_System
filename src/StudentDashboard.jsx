@@ -165,8 +165,8 @@ function Layout() {
               <button className="cursor-pointer rounded bg-gray-200 p-2 text-sm text-gray-800 hover:bg-gray-300 sm:w-auto w-full">
                 View all Books
               </button>
-              <span className="cursor-pointer rounded text-sm text-gray-500 hover:bg-gray-300 sm:w-auto w-full">
-                Weekly added
+              <span className="cursor-pointer rounded text-xs text-gray-500 hover:bg-gray-300 sm:w-auto w-full">
+                - Weekly added -
                 </span>
             </section>
 
@@ -204,6 +204,92 @@ function Layout() {
               ))}
             </section>
 
+            <section className="mt-12">
+              <article className="rounded-lg border border-gray-300 bg-white p-4 shadow-none">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-center sm:text-left">
+                    <h2 className="text-base font-semibold text-gray-900">
+                      My Borrowed
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="mx-auto inline-flex w-28 items-center justify-center rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 sm:mx-0 sm:w-auto"
+                  >
+                    View all
+                  </button>
+                </div>
+                
+                <section className="mt-10 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                  <div className="flex items-center gap-4 border-b border-gray-100 px-4 py-3 last:border-b-0">
+                    <img
+                      src={books1}
+                      alt="Atomic Habits"
+                      className="h-14 w-10 flex-none rounded object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold text-gray-900">
+                        Atomic Habits
+                      </h3>
+                      <p className="truncate text-xs text-gray-500">
+                        by James Clear
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+                        New
+                      </span>
+                      <span className="text-sm text-slate-500">2024</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 border-b border-gray-100 px-4 py-3 last:border-b-0">
+                    <img
+                      src={books2}
+                      alt="Clean Code"
+                      className="h-14 w-10 flex-none rounded object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold text-gray-900">
+                        Clean Code
+                      </h3>
+                      <p className="truncate text-xs text-gray-500">
+                        by Robert C. Martin
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+                        New
+                      </span>
+                      <span className="text-sm text-slate-500">2024</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 px-4 py-3">
+                    <img
+                      src={books3}
+                      alt="The Alchemist"
+                      className="h-14 w-10 flex-none rounded object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold text-gray-900">
+                        The Alchemist
+                      </h3>
+                      <p className="truncate text-xs text-gray-500">
+                        by Paulo Coelho 
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-medium text-emerald-700">
+                        New
+                      </span>
+                      <span className="text-sm text-slate-500">2024</span>
+                    </div>
+                  </div>
+                </section>
+              </article>
+            </section>
           </main>
         </main>
       </div>
