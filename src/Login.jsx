@@ -194,7 +194,6 @@ function Login() {
             </button>
 
             {isSubmitting && (
-              // Added supporting status text so the loading state feels professional.
               <p className="text-center text-sm text-slate-500">
                 Verifying your credentials...
               </p>
