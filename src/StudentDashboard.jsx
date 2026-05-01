@@ -67,6 +67,7 @@ function Layout() {
       note: "Ready to borrow",
     },
   ];
+  const greetingName = profile?.fullName || "Students";
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -88,11 +89,13 @@ function Layout() {
 
   const handleBorrowBook = (book) => {
     updateBookStatus(book.id, "Borrowed");
+    setBooks(getStoredBooks());
     setSelectedBook(null);
   };
 
   const handleReserveBook = (book) => {
     updateBookStatus(book.id, "Reserved");
+    setBooks(getStoredBooks());
     setSelectedBook(null);
   };
 
@@ -168,12 +171,14 @@ function Layout() {
             </button>
 
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gray-500">
-                Student Dashboard
-              </p>
-              <h1 className="truncate text-lg font-semibold text-gray-800 md:text-xl">
-                Hi, Students
-              </h1>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gray-500">
+                  Student Dashboard
+                </p>
+                <h1 className="truncate text-lg font-semibold text-gray-800 md:text-xl">
+                  Hi, {greetingName}
+                </h1>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1">
@@ -271,11 +276,17 @@ function Layout() {
                     className="group cursor-pointer overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 transition duration-300 hover:-translate-y-1 hover:bg-gray-50 hover:shadow-xl hover:ring-gray-300"
                   >
                     <div className="aspect-3/4 w-full overflow-hidden bg-gray-100">
-                      <img
-                        src={book.image || logo}
-                        alt={book.title}
-                        className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-105"
-                      />
+                      {book.image ? (
+                        <img
+                          src={book.image}
+                          alt={book.title}
+                          className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gray-200 text-xs font-medium text-gray-500">
+                          No cover
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2 p-4">
@@ -322,11 +333,17 @@ function Layout() {
                           key={book.id}
                           className="flex items-center gap-4 border-b border-gray-100 px-4 py-3 last:border-b-0"
                         >
-                          <img
-                            src={book.image || logo}
-                            alt={book.title}
-                            className="h-14 w-10 flex-none rounded object-cover"
-                          />
+                          {book.image ? (
+                            <img
+                              src={book.image}
+                              alt={book.title}
+                              className="h-14 w-10 flex-none rounded object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-10 flex-none items-center justify-center rounded bg-gray-200 text-[10px] font-medium text-gray-500">
+                              No cover
+                            </div>
+                          )}
                           <div className="min-w-0 flex-1">
                             <h3 className="truncate text-sm font-semibold text-gray-900">
                               {book.title}
@@ -387,11 +404,17 @@ function Layout() {
                       className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
                     >
                       <div className="aspect-3/4 w-full overflow-hidden bg-gray-100">
-                        <img
-                          src={book.image || logo}
-                          alt={book.title}
-                          className="h-full w-full object-cover object-center"
-                        />
+                        {book.image ? (
+                          <img
+                            src={book.image}
+                            alt={book.title}
+                            className="h-full w-full object-cover object-center"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-gray-200 text-xs font-medium text-gray-500">
+                            No cover
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2 p-4">
@@ -480,11 +503,17 @@ function Layout() {
             </div>
 
             <div className="grid gap-4 p-4 sm:grid-cols-[160px_1fr]">
-              <img
-                src={selectedBook.image || logo}
-                alt={selectedBook.title}
-                className="h-56 w-full rounded-xl object-cover"
-              />
+              {selectedBook.image ? (
+                <img
+                  src={selectedBook.image}
+                  alt={selectedBook.title}
+                  className="h-56 w-full rounded-xl object-cover"
+                />
+              ) : (
+                <div className="flex h-56 w-full items-center justify-center rounded-xl bg-gray-200 text-sm font-medium text-gray-500">
+                  No cover
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div>

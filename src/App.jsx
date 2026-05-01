@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "./assets/Logo.png";
 
 function App() {
   const [open, setOpen] = useState(false);
@@ -30,22 +31,29 @@ function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
 
           {/* TITLE */}
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-              Sumulong College of Arts and Science
-            </p>
-            <h1 className="mt-1 truncate text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-              SCAS Academic Course Library System
-            </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <img
+              src={logo}
+              alt="SCAS logo"
+              className="h-12 w-12 shrink-0 p-1"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                Sumulong College of Arts and Science
+              </p>
+              <h1 className="mt-1 truncate text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+                SCAS Academic Course Library
+              </h1>
+            </div>
           </div>
 
           {/* MOBILE BUTTON */}
           <button
             type="button"
-            className="md:hidden border px-4 py-2 rounded-full"
+            className="md:hidden border px-4 py-2 rounded-full cursor-pointer hover:bg-slate-100 active:bg-slate-200"
             onClick={() => setOpen(!open)}
           >
-            Get Started
+            Continue
           </button>
 
           {/* DESKTOP NAV */}
@@ -97,15 +105,15 @@ function App() {
             {/* LEFT CONTENT */}
             <div className="max-w-2xl">
               <p className="inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-slate-600">
-                welcome to our library system
+                welcome to our library
               </p>
 
               <h2 className="mt-5 text-4xl font-black sm:text-5xl lg:text-6xl">
-                SCAS Academic Course Library System
+                SCAS Academic Course Library
               </h2>
 
               <p className="mt-6 text-base text-slate-700 sm:text-lg">
-                A digital library system that helps students and instructors 
+                SCAS Academic Course Library System helps students and instructors
                 manage academic resources faster and more efficiently.
               </p>
 
@@ -114,7 +122,7 @@ function App() {
                   type="button"
                   className="cursor-pointer rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800"
                 >
-                  Get Started
+                  Get started
                 </button>
                 <button
                   type="button"
@@ -149,7 +157,7 @@ function App() {
       <footer className="border-t bg-slate-950 px-4 py-8 text-slate-200">
         <div className="mx-auto max-w-6xl text-center">
           <p className="text-sm">
-            SCAS Academic Course Library System | 2026
+            SCAS Academic Course Library | 2026
           </p>
         </div>
       </footer>

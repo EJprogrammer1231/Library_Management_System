@@ -102,9 +102,8 @@ function CreateAccount() {
       return;
     }
 
-    // Added a short loading delay so the user sees clear feedback before moving on.
     setIsSubmitting(true);
-    window.setTimeout(() => {
+    try {
       saveProfile({
         fullName: formData.fullName.trim(),
         email: formData.email.trim(),
@@ -112,7 +111,13 @@ function CreateAccount() {
       });
       setImageInputKey((current) => current + 1);
       navigate("/login");
-    }, 1100);
+    } catch {
+      setIsSubmitting(false);
+      setErrors((current) => ({
+        ...current,
+        submit: "We could not save your profile. Please try again.",
+      }));
+    }
   };
 
   return (
@@ -275,9 +280,14 @@ function CreateAccount() {
             </button>
 
             {isSubmitting && (
-              // Added supporting status text so the loading state feels polished.
               <p className="text-center text-sm text-slate-500">
-                Setting up your access...
+                Saving your profile...
+              </p>
+            )}
+
+            {errors.submit && (
+              <p className="text-center text-sm text-red-600">
+                {errors.submit}
               </p>
             )}
 

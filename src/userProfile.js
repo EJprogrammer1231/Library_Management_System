@@ -35,4 +35,3 @@ export function saveProfile(profile) {
 
   window.dispatchEvent(new Event("scas-user-profile-updated"));
 }
-

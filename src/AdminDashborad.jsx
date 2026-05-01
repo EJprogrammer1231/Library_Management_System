@@ -6,6 +6,7 @@ import {
   getStoredBooks,
   removeBook,
 } from "./libraryBooks";
+import { getStoredProfile } from "./userProfile";
 
 function AdminDashboard() {
   const [open, setOpen] = useState(false);
@@ -18,11 +19,12 @@ function AdminDashboard() {
   });
   const [imageInputKey, setImageInputKey] = useState(0);
   const [message, setMessage] = useState("");
+  const [profile, setProfile] = useState(() => getStoredProfile());
 
   const activity = [
-    "under developing",
-    "under developing",
-    "under developing",
+    "Books are managed in shared browser storage",
+    "Book counts update after add and delete",
+    "Search filters the shared book list",
   ];
 
   const bookCounts = getBookCounts(books);
@@ -46,6 +48,7 @@ function AdminDashboard() {
       book.author.toLowerCase().includes(query)
     );
   });
+  const greetingName = profile?.fullName || "Administrator";
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -57,14 +60,20 @@ function AdminDashboard() {
 
   useEffect(() => {
     const syncBooks = () => setBooks(getStoredBooks());
+    const syncProfile = () => setProfile(getStoredProfile());
 
     syncBooks();
+    syncProfile();
     window.addEventListener("storage", syncBooks);
+    window.addEventListener("storage", syncProfile);
     window.addEventListener("scas-library-books-updated", syncBooks);
+    window.addEventListener("scas-user-profile-updated", syncProfile);
 
     return () => {
       window.removeEventListener("storage", syncBooks);
+      window.removeEventListener("storage", syncProfile);
       window.removeEventListener("scas-library-books-updated", syncBooks);
+      window.removeEventListener("scas-user-profile-updated", syncProfile);
     };
   }, []);
 
@@ -91,6 +100,10 @@ function AdminDashboard() {
     reader.readAsDataURL(file);
   };
 
+  const refreshBooks = () => {
+    setBooks(getStoredBooks());
+  };
+
   const handleAddBook = (event) => {
     event.preventDefault();
 
@@ -107,7 +120,7 @@ function AdminDashboard() {
 
     setBookForm({ title: "", author: "", image: "" });
     setImageInputKey((current) => current + 1);
-    setBooks(getStoredBooks());
+    refreshBooks();
     setMessage("New book added successfully.");
   };
 
@@ -121,7 +134,7 @@ function AdminDashboard() {
     }
 
     removeBook(book.id);
-    setBooks(getStoredBooks());
+    refreshBooks();
     setMessage(`"${book.title}" was deleted.`);
   };
 
@@ -177,13 +190,15 @@ function AdminDashboard() {
                 </span>
               </button>
 
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gray-500">
-                  Admin Dashboard
-                </p>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Library management overview
-                </h1>
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gray-500">
+                    Admin Dashboard
+                  </p>
+                  <h1 className="text-xl font-bold text-gray-900">
+                    Hi, {greetingName}
+                  </h1>
+                </div>
               </div>
             </div>
 
@@ -299,11 +314,17 @@ function AdminDashboard() {
                 </div>
 
                 <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3">
-                  <img
-                    src={bookForm.image || logo}
-                    alt="Book cover preview"
-                    className="h-16 w-12 rounded object-cover"
-                  />
+                  {bookForm.image ? (
+                    <img
+                      src={bookForm.image}
+                      alt="Book cover preview"
+                      className="h-16 w-12 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-12 items-center justify-center rounded bg-gray-200 text-[10px] font-medium text-gray-500">
+                      No cover
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm font-medium text-gray-900">
                       Cover preview
@@ -322,52 +343,58 @@ function AdminDashboard() {
               <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {filteredBooks.length > 0 ? (
                   filteredBooks.map((book) => (
-                  <article
-                    key={book.title}
-                    className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
-                  >
-                    <img
-                      src={book.image}
-                      alt={book.title}
-                      className="h-52 w-full object-cover"
-                    />
-                    <div className="space-y-2 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-900">
-                            {book.title}
-                          </h3>
-                          <p className="text-xs text-gray-500">{book.author}</p>
+                    <article
+                      key={book.id}
+                      className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                    >
+                      {book.image ? (
+                        <img
+                          src={book.image}
+                          alt={book.title}
+                          className="h-52 w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-52 w-full items-center justify-center bg-gray-200 text-sm font-medium text-gray-500">
+                          No cover
                         </div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                            book.status === "Borrowed"
-                              ? "bg-amber-100 text-amber-700"
-                              : book.status === "Reserved"
-                                ? "bg-sky-100 text-sky-700"
-                                : "bg-emerald-100 text-emerald-700"
-                          }`}
+                      )}
+                      <div className="space-y-2 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900">
+                              {book.title}
+                            </h3>
+                            <p className="text-xs text-gray-500">{book.author}</p>
+                          </div>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                              book.status === "Borrowed"
+                                ? "bg-amber-100 text-amber-700"
+                                : book.status === "Reserved"
+                                  ? "bg-sky-100 text-sky-700"
+                                  : "bg-emerald-100 text-emerald-700"
+                            }`}
+                          >
+                            {book.status}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
                         >
-                          {book.status}
-                        </span>
+                          Manage
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBook(book)}
+                          className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
                       </div>
-
-                      <button
-                        type="button"
-                        className="w-full rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-                      >
-                        Manage
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteBook(book)}
-                        className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </article>
+                    </article>
                   ))
                 ) : (
                   <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500 sm:col-span-2">
