@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { saveProfile } from "./userProfile";
 
 function CreateAccount() {
   const navigate = useNavigate();
@@ -8,11 +9,13 @@ function CreateAccount() {
     email: "",
     password: "",
     confirmPassword: "",
+    avatar: "",
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   // Added loading state so account creation feels deliberate and professional.
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageInputKey, setImageInputKey] = useState(0);
 
   const pageBackground = {
     background:
@@ -57,6 +60,24 @@ function CreateAccount() {
     setErrors(validate(nextFormData));
   };
 
+  const handleAvatarChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setFormData((current) => ({ ...current, avatar: "" }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData((current) => ({
+        ...current,
+        avatar: typeof reader.result === "string" ? reader.result : "",
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleBlur = (event) => {
     const { name } = event.target;
     setTouched((current) => ({ ...current, [name]: true }));
@@ -84,6 +105,12 @@ function CreateAccount() {
     // Added a short loading delay so the user sees clear feedback before moving on.
     setIsSubmitting(true);
     window.setTimeout(() => {
+      saveProfile({
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        avatar: formData.avatar,
+      });
+      setImageInputKey((current) => current + 1);
       navigate("/login");
     }, 1100);
   };
@@ -105,6 +132,31 @@ function CreateAccount() {
           </div>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-700">Profile image</p>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-200">
+                  {formData.avatar ? (
+                    <img
+                      src={formData.avatar}
+                      alt="Profile preview"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm font-bold text-slate-500">U</span>
+                  )}
+                </div>
+                <input
+                  key={imageInputKey}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  disabled={isSubmitting}
+                  className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
+                />
+              </div>
+            </div>
+
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
                 Full Name
