@@ -90,7 +90,7 @@ function LoginAdmin() {
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               Enter your admin credentials to manage the SCAS academic course
-              library system.
+              library.
             </p>
           </div>
 
@@ -163,7 +163,7 @@ function LoginAdmin() {
 
             {showRecoveryHint && (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                If you forgot your password, contact the system administrator.
+                If you forgot your password, contact the rigestrar to ressolve the issue.
               </div>
             )}
 

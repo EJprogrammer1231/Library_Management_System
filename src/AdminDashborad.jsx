@@ -1,30 +1,27 @@
 import { useEffect, useState } from "react";
 import logo from "./assets/Logo.png";
-import {
-  addBook,
-  getBookCounts,
-  getStoredBooks,
-  removeBook,
-} from "./libraryBooks";
+import { addBook,getBookCounts,getStoredBooks,removeBook, } from "./libraryBooks";
 import { getStoredProfile } from "./userProfile";
 
 function AdminDashboard() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [books, setBooks] = useState(() => getStoredBooks());
+
   const [bookForm, setBookForm] = useState({
     title: "",
     author: "",
     image: "",
   });
+
   const [imageInputKey, setImageInputKey] = useState(0);
   const [message, setMessage] = useState("");
   const [profile, setProfile] = useState(() => getStoredProfile());
 
   const activity = [
-    "Books are managed in shared browser storage",
-    "Book counts update after add and delete",
-    "Search filters the shared book list",
+    "under devloping",
+    "under devloping",
+    "under devloping",
   ];
 
   const bookCounts = getBookCounts(books);
@@ -48,7 +45,6 @@ function AdminDashboard() {
       book.author.toLowerCase().includes(query)
     );
   });
-  const greetingName = profile?.fullName || "Administrator";
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -196,7 +192,7 @@ function AdminDashboard() {
                     Admin Dashboard
                   </p>
                   <h1 className="text-xl font-bold text-gray-900">
-                    Hi, {greetingName}
+                    Hi, Admin
                   </h1>
                 </div>
               </div>
