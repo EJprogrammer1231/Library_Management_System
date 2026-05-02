@@ -123,7 +123,7 @@ function CreateAccount() {
   return (
     <div className="min-h-screen text-slate-900" style={pageBackground}>
       <div className="mx-auto flex min-h-screen max-w-md items-center px-4 py-10">
-        <section className="w-full rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl shadow-slate-900/10">
+        <section className="w-fullborder-slate-200 bg-white p-8 shadow-2xl shadow-slate-900/10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
               Get started

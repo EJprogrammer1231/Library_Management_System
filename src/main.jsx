@@ -9,6 +9,8 @@ import Dashboard from './StudentDashboard.jsx'
 import ChooseCategory from './choose-category.jsx'
 import LoginAdmin from './loginAdmin.jsx'
 import AdminDashboard from './AdminDashborad.jsx'
+import WatchDemo from './Watch-demo.jsx'
+import readOverview from './Read-overview.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -21,7 +23,9 @@ createRoot(document.getElementById('root')).render(
         <Route path="/ChooseCategory" element={<ChooseCategory />} />
         <Route path="/loginAdmin" element={<LoginAdmin />} />
         <Route path="/AdminDashboard" element={<AdminDashboard />} />
+        <Route path="/Watch-demo" element={<WatchDemo />} />
+        <Route path="/Read-overview" element={<readOverview />} />
       </Routes>
     </BrowserRouter>
-  </StrictMode>,
+  </StrictMode>
 )

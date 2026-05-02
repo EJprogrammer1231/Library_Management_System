@@ -19,8 +19,12 @@ function App() {
     }
   };
 
-  const scrollToOverview = () => {
-    overviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const handleDemo = () => {
+    navigate("/Watch-demo");
+  };
+
+  const handleOverview = () => {
+    navigate("/Read-overview");
   };
 
   return (
@@ -120,16 +124,17 @@ function App() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  className="cursor-pointer rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800"
+                  onClick={handleOverview}
+                  className="text-sm cursor-pointer rounded-full bg-slate-950 px-6 py-3 text-white hover:bg-slate-800"
                 >
-                  Get started
+                  Read Overview
                 </button>
                 <button
                   type="button"
-                  className="cursor-pointer rounded-full border px-6 py-3 hover:bg-slate-300"
-                  onClick={scrollToOverview}
+                  className="text-sm cursor-pointer rounded-full border px-6 py-3 hover:bg-slate-300"
+                  onClick={handleDemo}
                 >
-                  Read Overview
+                  Watch Demo
                 </button>
               </div>
             </div>
