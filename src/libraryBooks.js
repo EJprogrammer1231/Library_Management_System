@@ -114,6 +114,21 @@ export function removeBook(bookId) {
   return nextBooks;
 }
 
+export function updateBook(bookId, updates) {
+  const currentBooks = getStoredBooks();
+  const nextBooks = currentBooks.map((book) =>
+    book.id === bookId ? { ...book, ...updates } : book,
+  );
+
+  saveBooks(nextBooks);
+
+  if (canUseStorage()) {
+    window.dispatchEvent(new Event("scas-library-books-updated"));
+  }
+
+  return nextBooks;
+}
+
 export function updateBookStatus(bookId, status) {
   const currentBooks = getStoredBooks();
   const nextBooks = currentBooks.map((book) =>

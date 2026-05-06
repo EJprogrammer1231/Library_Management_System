@@ -1,8 +1,5 @@
-export default readOverview;
-
-function readOverview() {
-
-  return (
-    <h1>under developing</h1>
-  );
+function ReadOverview() {
+  return <h1>under developing</h1>;
 }
+
+export default ReadOverview;

@@ -10,7 +10,7 @@ import ChooseCategory from './choose-category.jsx'
 import LoginAdmin from './loginAdmin.jsx'
 import AdminDashboard from './AdminDashborad.jsx'
 import WatchDemo from './Watch-demo.jsx'
-import readOverview from './Read-overview.jsx'
+import ReadOverview from './Read-overview.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -24,7 +24,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/loginAdmin" element={<LoginAdmin />} />
         <Route path="/AdminDashboard" element={<AdminDashboard />} />
         <Route path="/Watch-demo" element={<WatchDemo />} />
-        <Route path="/Read-overview" element={<readOverview />} />
+        <Route path="/Read-overview" element={<ReadOverview />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

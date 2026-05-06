@@ -142,7 +142,7 @@ function Layout() {
           <MenuItem label="Course Materials" />
           <MenuItem label="Announcements" />
           <MenuItem label="Profile" />
-          <MenuItem label="Settings" />
+          <MenuItem label="Settings" /> 
           <MenuItem label="Logout" />
         </nav>
       </aside>
