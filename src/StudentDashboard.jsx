@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "./assets/Logo.png";
-import { getBookCounts, getStoredBooks, updateBookStatus } from "./libraryBooks";
+import { borrowOrReserveBook, getBookCounts, getBookCopies, getStoredBooks } from "./libraryBooks";
 import { getStoredProfile } from "./userProfile";
 
 function Layout() {
@@ -10,6 +10,7 @@ function Layout() {
   const [books, setBooks] = useState(() => getStoredBooks());
   const [selectedBook, setSelectedBook] = useState(null);
   const [profile, setProfile] = useState(() => getStoredProfile());
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     const syncBooks = () => setBooks(getStoredBooks());
@@ -88,15 +89,37 @@ function Layout() {
   };
 
   const handleBorrowBook = (book) => {
-    updateBookStatus(book.id, "Borrowed");
-    setBooks(getStoredBooks());
+    if (getBookCopies(book) === 0 || book.status === "Not Available") {
+      setNotice("This book is sold out. Copies are now 0.");
+      return;
+    }
+
+    const updatedBooks = borrowOrReserveBook(book.id, "Borrowed");
+    const updatedBook = updatedBooks.find((item) => item.id === book.id);
+    setBooks(updatedBooks);
     setSelectedBook(null);
+    setNotice(
+      updatedBook && getBookCopies(updatedBook) === 0
+        ? "This book is sold out. Copies are now 0."
+        : "",
+    );
   };
 
   const handleReserveBook = (book) => {
-    updateBookStatus(book.id, "Reserved");
-    setBooks(getStoredBooks());
+    if (getBookCopies(book) === 0 || book.status === "Not Available") {
+      setNotice("This book is sold out. Copies are now 0.");
+      return;
+    }
+
+    const updatedBooks = borrowOrReserveBook(book.id, "Reserved");
+    const updatedBook = updatedBooks.find((item) => item.id === book.id);
+    setBooks(updatedBooks);
     setSelectedBook(null);
+    setNotice(
+      updatedBook && getBookCopies(updatedBook) === 0
+        ? "This book is sold out. Copies are now 0."
+        : "",
+    );
   };
 
   const handleOpenBooks = () => {
@@ -223,6 +246,45 @@ function Layout() {
             </button>
           </form>
         </header>
+
+        {notice && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+            onClick={() => setNotice("")}
+          >
+            <div
+              className="w-full max-w-md rounded-3xl border border-gray-300 bg-white p-6 shadow-2xl shadow-black/20"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-black">
+                  !
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-black">
+                    Sold Out
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold text-black">
+                    This book is sold out
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-gray-700">
+                    {notice}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setNotice("")}
+                  className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-gray-100"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -425,17 +487,33 @@ function Layout() {
                             </h3>
                             <p className="text-xs text-gray-500">{book.author}</p>
                           </div>
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] ${
-                              book.status === "Borrowed"
-                                ? "bg-amber-100 text-amber-700"
-                                : book.status === "Reserved"
-                                  ? "bg-sky-100 text-sky-700"
-                                  : "bg-emerald-100 text-emerald-700"
-                            }`}
-                          >
-                            {book.status}
-                          </span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] ${
+                                book.status === "Borrowed"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : book.status === "Reserved"
+                                    ? "bg-sky-100 text-sky-700"
+                                    : book.status === "Not Available"
+                                      ? "bg-slate-200 text-slate-700"
+                                    : "bg-emerald-100 text-emerald-700"
+                              }`}
+                            >
+                              {book.status}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {getBookCopies(book)} {getBookCopies(book) === 1 ? "copy" : "copies"}
+                            </span>
+                            <span
+                              className={`text-xs font-medium ${
+                                getBookCopies(book) > 0
+                                  ? "text-emerald-600"
+                                  : "text-rose-600"
+                              }`}
+                            >
+                              {getBookCopies(book) > 0 ? "Available" : "Not available"}
+                            </span>
+                          </div>
                         </div>
 
                         <button
@@ -449,7 +527,8 @@ function Layout() {
                         <button
                           type="button"
                           onClick={() => handleBorrowBook(book)}
-                          className="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                          disabled={getBookCopies(book) === 0 || book.status === "Not Available"}
+                          className="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                         >
                           Borrow
                         </button>
@@ -457,7 +536,8 @@ function Layout() {
                         <button
                           type="button"
                           onClick={() => handleReserveBook(book)}
-                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-50"
+                          disabled={getBookCopies(book) === 0 || book.status === "Not Available"}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                         >
                           Reserve
                         </button>
@@ -526,7 +606,14 @@ function Layout() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="text-base font-semibold text-gray-900">
-                    {selectedBook.status}
+                    {getBookCopies(selectedBook) === 0 ? "Not Available" : selectedBook.status}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Copies</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {getBookCopies(selectedBook)} {getBookCopies(selectedBook) === 1 ? "copy" : "copies"}
                   </p>
                 </div>
 
@@ -542,14 +629,16 @@ function Layout() {
                   <button
                     type="button"
                     onClick={() => handleBorrowBook(selectedBook)}
-                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                    disabled={getBookCopies(selectedBook) === 0 || selectedBook.status === "Not Available"}
+                    className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
                   >
                     Borrow
                   </button>
                   <button
                     type="button"
                     onClick={() => handleReserveBook(selectedBook)}
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                    disabled={getBookCopies(selectedBook) === 0 || selectedBook.status === "Not Available"}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     Reserve
                   </button>

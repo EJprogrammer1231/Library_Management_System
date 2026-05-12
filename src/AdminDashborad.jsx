@@ -4,6 +4,7 @@ import books1 from "./assets/books1.png";
 import {
   addBook,
   getBookCounts,
+  getBookCopies,
   getStoredBooks,
   removeBook,
   updateBook,
@@ -20,6 +21,7 @@ function AdminDashboard() {
     title: "",
     author: "",
     image: "",
+    copies: "1",
   });
 
   const [imageInputKey, setImageInputKey] = useState(0);
@@ -33,6 +35,7 @@ function AdminDashboard() {
     author: "",
     image: "",
     status: "Available",
+    copies: "1",
   });
   const [manageImageInputKey, setManageImageInputKey] = useState(0);
 
@@ -45,10 +48,31 @@ function AdminDashboard() {
   const bookCounts = getBookCounts(books);
 
   const stats = [
-    { label: "Total Books", value: bookCounts.total.toString() },
-    { label: "Borrowed", value: bookCounts.borrowed.toString() },
-    { label: "Reserved", value: bookCounts.reserved.toString() },
-    { label: "Available", value: bookCounts.available.toString() },
+    {
+      label: "Total Books",
+      value: bookCounts.total.toString(),
+      note: "All books in the library",
+    },
+    {
+      label: "Borrowed",
+      value: bookCounts.borrowed.toString(),
+      note: "Currently checked out",
+    },
+    {
+      label: "Reserved",
+      value: bookCounts.reserved.toString(),
+      note: "Waiting for pickup",
+    },
+    {
+      label: "Not Available",
+      value: bookCounts.notAvailable.toString(),
+      note: "Marked out of stock",
+    },
+    {
+      label: "Available",
+      value: bookCounts.available.toString(),
+      note: "Ready to borrow",
+    },
   ];
 
   const filteredBooks = books.filter((book) => {
@@ -116,7 +140,17 @@ function AdminDashboard() {
 
   const handleManageBookFormChange = (event) => {
     const { name, value } = event.target;
-    setManageBookForm((current) => ({ ...current, [name]: value }));
+    setManageBookForm((current) => {
+      if (name === "copies" && Number(value) === 0) {
+        return { ...current, copies: value, status: "Not Available" };
+      }
+
+      if (name === "status" && value === "Not Available") {
+        return { ...current, status: value, copies: "0" };
+      }
+
+      return { ...current, [name]: value };
+    });
   };
 
   const handleManageBookImageChange = (event) => {
@@ -153,9 +187,10 @@ function AdminDashboard() {
       title: bookForm.title.trim(),
       author: bookForm.author.trim(),
       image: bookForm.image,
+      copies: bookForm.copies,
     });
 
-    setBookForm({ title: "", author: "", image: "" });
+    setBookForm({ title: "", author: "", image: "", copies: "1" });
     setImageInputKey((current) => current + 1);
     refreshBooks();
     setMessage("New book added successfully.");
@@ -185,7 +220,8 @@ function AdminDashboard() {
       title: book.title,
       author: book.author,
       image: book.image || "",
-      status: book.status || "Available",
+      status: getBookCopies(book) === 0 ? "Not Available" : book.status || "Available",
+      copies: String(getBookCopies(book)),
     });
     setManageImageInputKey((current) => current + 1);
     setManageBooksOpen(true);
@@ -199,6 +235,7 @@ function AdminDashboard() {
       author: "",
       image: "",
       status: "Available",
+      copies: "1",
     });
   };
 
@@ -223,6 +260,7 @@ function AdminDashboard() {
       author: manageBookForm.author.trim(),
       image: manageBookForm.image,
       status: manageBookForm.status,
+      copies: manageBookForm.copies,
     });
 
     refreshBooks();
@@ -374,21 +412,20 @@ function AdminDashboard() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {stats.map((stat) => (
               <article
                 key={stat.label}
-                className={`rounded-2xl border p-4 shadow-lg backdrop-blur transition duration-200 hover:-translate-y-0.5 hover:shadow-xl ${
-                  theme === "dark"
-                    ? "border-slate-800 bg-slate-900/90 shadow-black/20"
-                    : "border-white/70 bg-white/90 shadow-slate-200/60"
-                }`}
+                className="rounded-xl border border-gray-300 bg-white p-4"
               >
-                <span className={`block text-sm font-medium ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                <span className="block text-sm font-medium text-gray-500">
                   {stat.label}
                 </span>
-                <span className={`mt-2 block text-3xl font-semibold ${theme === "dark" ? "text-slate-100" : "text-slate-900"}`}>
+                <span className="mt-2 block text-3xl font-semibold text-gray-900">
                   {stat.value}
+                </span>
+                <span className="mt-1 block text-xs text-gray-500">
+                  {stat.note}
                 </span>
               </article>
             ))}
@@ -465,6 +502,20 @@ function AdminDashboard() {
                     }`}
                   />
                 </div>
+
+                <input
+                  type="number"
+                  name="copies"
+                  min="1"
+                  value={bookForm.copies}
+                  onChange={handleBookFormChange}
+                  placeholder="Number of copies"
+                  className={`rounded-xl border px-3 py-2 text-sm shadow-sm outline-none transition focus:ring-4 ${
+                    theme === "dark"
+                      ? "border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-500/20"
+                      : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-slate-500 focus:ring-slate-200"
+                  }`}
+                />
 
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                   <input
@@ -561,17 +612,24 @@ function AdminDashboard() {
                             </h3>
                             <p className={theme === "dark" ? "text-xs text-slate-400" : "text-xs text-slate-500"}>{book.author}</p>
                           </div>
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] shadow-sm ${
-                              book.status === "Borrowed"
-                                ? "bg-amber-100 text-amber-700"
-                                : book.status === "Reserved"
-                                  ? "bg-sky-100 text-sky-700"
-                                  : "bg-emerald-100 text-emerald-700"
-                            }`}
-                          >
-                            {book.status}
-                          </span>
+                          <div className="flex flex-col items-end gap-1">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] shadow-sm ${
+                                book.status === "Borrowed"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : book.status === "Reserved"
+                                    ? "bg-sky-100 text-sky-700"
+                                    : book.status === "Not Available"
+                                      ? "bg-slate-200 text-slate-700"
+                                      : "bg-emerald-100 text-emerald-700"
+                              }`}
+                            >
+                              {book.status}
+                            </span>
+                            <span className={theme === "dark" ? "text-xs text-slate-400" : "text-xs text-slate-500"}>
+                              {getBookCopies(book)} {getBookCopies(book) === 1 ? "copy" : "copies"}
+                            </span>
+                          </div>
                         </div>
 
                         <div
@@ -585,7 +643,7 @@ function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleViewDescription(book)}
-                              className={`cursor-pointer rounded-lg border px-3 py-2 text-xs font-medium shadow-sm transition ${
+                              className={`cursor-pointer rounded-md border px-2.5 py-1.5 text-[11px] font-medium shadow-sm transition ${
                                 theme === "dark"
                                   ? "border-slate-700 bg-slate-950 text-slate-100 hover:bg-slate-800"
                                   : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
@@ -597,7 +655,7 @@ function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => handleDeleteBook(book)}
-                              className="cursor-pointer rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 shadow-sm transition hover:bg-red-100"
+                              className="cursor-pointer rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-medium text-red-700 shadow-sm transition hover:bg-red-100"
                             >
                               Delete
                             </button>
@@ -758,20 +816,35 @@ function AdminDashboard() {
                   <option value="Available">Available</option>
                   <option value="Borrowed">Borrowed</option>
                   <option value="Reserved">Reserved</option>
+                  <option value="Not Available">Not Available</option>
                 </select>
 
                 <input
-                  key={manageImageInputKey}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleManageBookImageChange}
-                  className={`block w-full rounded-xl border px-3 py-2 text-sm shadow-sm file:mr-4 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white ${
+                  type="number"
+                  name="copies"
+                  min="0"
+                  value={manageBookForm.copies}
+                  onChange={handleManageBookFormChange}
+                  placeholder="Number of copies"
+                  className={`rounded-xl border px-3 py-2 text-sm shadow-sm outline-none transition focus:ring-4 ${
                     theme === "dark"
-                      ? "border-slate-700 bg-slate-950 text-slate-100 file:bg-cyan-600 hover:file:bg-cyan-500"
-                      : "border-gray-300 bg-white text-gray-900 file:bg-slate-900 hover:file:bg-slate-800"
+                      ? "border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-500/20"
+                      : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-slate-500 focus:ring-slate-200"
                   }`}
                 />
               </div>
+
+              <input
+                key={manageImageInputKey}
+                type="file"
+                accept="image/*"
+                onChange={handleManageBookImageChange}
+                className={`block w-full rounded-xl border px-3 py-2 text-sm shadow-sm file:mr-4 file:rounded-lg file:border-0 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white ${
+                  theme === "dark"
+                    ? "border-slate-700 bg-slate-950 text-slate-100 file:bg-cyan-600 hover:file:bg-cyan-500"
+                    : "border-gray-300 bg-white text-gray-900 file:bg-slate-900 hover:file:bg-slate-800"
+                }`}
+              />
 
               <div className="flex gap-3">
                 <button

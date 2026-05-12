@@ -12,6 +12,9 @@ export const initialBooks = [
     author: "James Clear",
     image: books1,
     status: "Available",
+    copies: 3,
+    borrowedCopies: 0,
+    reservedCopies: 0,
     description:
       "A practical guide to building better habits through small, consistent changes.",
   },
@@ -21,6 +24,9 @@ export const initialBooks = [
     author: "Robert C. Martin",
     image: books2,
     status: "Borrowed",
+    copies: 2,
+    borrowedCopies: 1,
+    reservedCopies: 0,
     description:
       "A handbook for writing cleaner, more maintainable code in everyday development.",
   },
@@ -30,6 +36,9 @@ export const initialBooks = [
     author: "Paulo Coelho",
     image: books3,
     status: "Reserved",
+    copies: 1,
+    borrowedCopies: 0,
+    reservedCopies: 1,
     description:
       "A story about following your purpose and learning from the journey itself.",
   },
@@ -39,6 +48,9 @@ export const initialBooks = [
     author: "Robert T. Kiyosaki",
     image: books4,
     status: "Available",
+    copies: 4,
+    borrowedCopies: 0,
+    reservedCopies: 0,
     description:
       "A personal finance book that compares two perspectives on money and investing.",
   },
@@ -80,15 +92,19 @@ export function saveBooks(books) {
 
 export function addBook(book) {
   const currentBooks = getStoredBooks();
+  const nextCopies = parseCopies(book.copies, 1);
   const nextBooks = [
     ...currentBooks,
     {
       id: Date.now(),
-      status: "Available",
+      status: nextCopies > 0 ? "Available" : "Not Available",
+      borrowedCopies: 0,
+      reservedCopies: 0,
       description:
         book.description ||
         `${book.title} by ${book.author} is available in the library collection.`,
       ...book,
+      copies: nextCopies,
     },
   ];
 
@@ -117,7 +133,7 @@ export function removeBook(bookId) {
 export function updateBook(bookId, updates) {
   const currentBooks = getStoredBooks();
   const nextBooks = currentBooks.map((book) =>
-    book.id === bookId ? { ...book, ...updates } : book,
+    book.id === bookId ? applyBookUpdates(book, updates) : book,
   );
 
   saveBooks(nextBooks);
@@ -144,11 +160,82 @@ export function updateBookStatus(bookId, status) {
   return nextBooks;
 }
 
+export function borrowOrReserveBook(bookId, status) {
+  const currentBooks = getStoredBooks();
+  const nextBooks = currentBooks.map((book) => {
+    if (book.id !== bookId) {
+      return book;
+    }
+
+    const nextCopies = Math.max(0, getBookCopies(book) - 1);
+
+    return {
+      ...book,
+      copies: nextCopies,
+      borrowedCopies:
+        status === "Borrowed"
+          ? (Number(book.borrowedCopies) || 0) + 1
+          : Number(book.borrowedCopies) || 0,
+      reservedCopies:
+        status === "Reserved"
+          ? (Number(book.reservedCopies) || 0) + 1
+          : Number(book.reservedCopies) || 0,
+      status: nextCopies === 0 ? "Not Available" : status,
+    };
+  });
+
+  saveBooks(nextBooks);
+
+  if (canUseStorage()) {
+    window.dispatchEvent(new Event("scas-library-books-updated"));
+  }
+
+  return nextBooks;
+}
+
 export function getBookCounts(books = getStoredBooks()) {
   return {
     total: books.length,
-    borrowed: books.filter((book) => book.status === "Borrowed").length,
-    reserved: books.filter((book) => book.status === "Reserved").length,
-    available: books.filter((book) => book.status === "Available").length,
+    borrowed: sumField(books, "borrowedCopies"),
+    reserved: sumField(books, "reservedCopies"),
+    notAvailable: books.filter((book) => getBookCopies(book) === 0 || book.status === "Not Available").length,
+    available: books.reduce((total, book) => total + getBookCopies(book), 0),
   };
+}
+
+export function getBookCopies(book) {
+  return parseCopies(book?.copies, 1);
+}
+
+function applyBookUpdates(book, updates) {
+  const nextCopies =
+    updates.copies === undefined
+      ? getBookCopies(book)
+      : parseCopies(updates.copies, 0);
+  const nextStatus =
+    updates.status === "Not Available"
+      ? "Not Available"
+      : nextCopies === 0
+        ? "Not Available"
+        : updates.status || book.status || "Available";
+
+  return {
+    ...book,
+    ...updates,
+    copies: nextCopies,
+    status: nextStatus,
+  };
+}
+
+function parseCopies(value, fallback) {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+function sumField(books, field) {
+  return books.reduce((total, book) => total + (Number(book[field]) || 0), 0);
 }
