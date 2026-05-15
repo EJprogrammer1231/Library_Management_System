@@ -4,6 +4,7 @@
   "description": "Library Management System with React frontend and Express backend",
   "private": true,
   "scripts": {
+    "build": "cd frontend && npm run build",
     "frontend-dev": "cd frontend && npm run dev",
     "frontend-build": "cd frontend && npm run build",
     "frontend-preview": "cd frontend && npm run preview",
