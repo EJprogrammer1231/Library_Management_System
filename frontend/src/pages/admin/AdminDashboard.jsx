@@ -1,25 +1,34 @@
 import { useEffect, useState } from "react";
-import logo from "./assets/Logo.png";
-import books1 from "./assets/books1.png";
+import logo from "../../assets/Logo.png";
+import books1 from "../../assets/books1.png";
 import {
   addBook,
+  getBorrowReserveReports,
   getBookCounts,
   getBookCopies,
   getStoredBooks,
   removeBook,
   updateBook,
-} from "./libraryBooks";
-import { getStoredProfile } from "./userProfile";
+} from "../../services/libraryBooks";
+import { deleteStudentAccount, getStoredProfile, getStoredStudents } from "../../services/userProfile";
+
+const COURSE_CATEGORIES = ["All", "BSIT", "BSCS", "BSBA", "BSED", "BEED", "BSTM", "BSHM", "General"];
 
 function AdminDashboard() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [studentSearchTerm, setStudentSearchTerm] = useState("");
+  const [activeSection, setActiveSection] = useState("dashboard");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [books, setBooks] = useState(() => getStoredBooks());
+  const [reports, setReports] = useState(() => getBorrowReserveReports());
+  const [students, setStudents] = useState(() => getStoredStudents());
   const theme = "light";
 
   const [bookForm, setBookForm] = useState({
     title: "",
     author: "",
+    category: "General",
     image: "",
     copies: "1",
   });
@@ -35,6 +44,7 @@ function AdminDashboard() {
     author: "",
     image: "",
     status: "Available",
+    category: "General",
     copies: "1",
   });
   const [manageImageInputKey, setManageImageInputKey] = useState(0);
@@ -84,12 +94,44 @@ function AdminDashboard() {
 
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.author.toLowerCase().includes(query) ||
+      getBookCategory(book).toLowerCase().includes(query)
+    );
+  });
+
+  const categorizedBooks = filteredBooks.filter(
+    (book) => activeCategory === "All" || getBookCategory(book) === activeCategory,
+  );
+
+  const reportCounts = reports.reduce(
+    (totals, report) => ({
+      borrowed:
+        totals.borrowed + (report.status === "Borrowed" ? Number(report.quantity) || 0 : 0),
+      reserved:
+        totals.reserved + (report.status === "Reserved" ? Number(report.quantity) || 0 : 0),
+    }),
+    { borrowed: 0, reserved: 0 },
+  );
+
+  const filteredStudents = students.filter((student) => {
+    const query = studentSearchTerm.trim().toLowerCase();
+
+    if (!query) {
+      return true;
+    }
+
+    return (
+      student.fullName.toLowerCase().includes(query) ||
+      student.email.toLowerCase().includes(query) ||
+      student.course.toLowerCase().includes(query) ||
+      student.yearLevel.toLowerCase().includes(query) ||
+      student.section.toLowerCase().includes(query)
     );
   });
 
   const handleSearch = (event) => {
     event.preventDefault();
+    setActiveSection("books");
   };
 
   const handleSearchChange = (event) => {
@@ -98,19 +140,31 @@ function AdminDashboard() {
 
   useEffect(() => {
     const syncBooks = () => setBooks(getStoredBooks());
+    const syncReports = () => setReports(getBorrowReserveReports());
+    const syncStudents = () => setStudents(getStoredStudents());
     const syncProfile = () => setProfile(getStoredProfile());
 
     syncBooks();
+    syncReports();
+    syncStudents();
     syncProfile();
     window.addEventListener("storage", syncBooks);
+    window.addEventListener("storage", syncReports);
+    window.addEventListener("storage", syncStudents);
     window.addEventListener("storage", syncProfile);
     window.addEventListener("scas-library-books-updated", syncBooks);
+    window.addEventListener("scas-library-reports-updated", syncReports);
+    window.addEventListener("scas-student-accounts-updated", syncStudents);
     window.addEventListener("scas-user-profile-updated", syncProfile);
 
     return () => {
       window.removeEventListener("storage", syncBooks);
+      window.removeEventListener("storage", syncReports);
+      window.removeEventListener("storage", syncStudents);
       window.removeEventListener("storage", syncProfile);
       window.removeEventListener("scas-library-books-updated", syncBooks);
+      window.removeEventListener("scas-library-reports-updated", syncReports);
+      window.removeEventListener("scas-student-accounts-updated", syncStudents);
       window.removeEventListener("scas-user-profile-updated", syncProfile);
     };
   }, []);
@@ -186,11 +240,12 @@ function AdminDashboard() {
     addBook({
       title: bookForm.title.trim(),
       author: bookForm.author.trim(),
+      category: bookForm.category,
       image: bookForm.image,
       copies: bookForm.copies,
     });
 
-    setBookForm({ title: "", author: "", image: "", copies: "1" });
+    setBookForm({ title: "", author: "", category: "General", image: "", copies: "1" });
     setImageInputKey((current) => current + 1);
     refreshBooks();
     setMessage("New book added successfully.");
@@ -221,6 +276,7 @@ function AdminDashboard() {
       author: book.author,
       image: book.image || "",
       status: getBookCopies(book) === 0 ? "Not Available" : book.status || "Available",
+      category: getBookCategory(book),
       copies: String(getBookCopies(book)),
     });
     setManageImageInputKey((current) => current + 1);
@@ -235,12 +291,48 @@ function AdminDashboard() {
       author: "",
       image: "",
       status: "Available",
+      category: "General",
       copies: "1",
     });
   };
 
   const closeDescription = () => {
     setDescriptionBook(null);
+  };
+
+  const handleOpenReports = () => {
+    setActiveSection("reports");
+    setOpen(false);
+  };
+
+  const handleOpenDashboard = () => {
+    setActiveSection("dashboard");
+    setOpen(false);
+  };
+
+  const handleOpenBooks = () => {
+    setActiveSection("books");
+    setOpen(false);
+  };
+
+  const handleOpenStudents = () => {
+    setActiveSection("students");
+    setOpen(false);
+  };
+
+  const handleDownloadReportsPdf = () => {
+    downloadReportsPdf(reports, reportCounts);
+  };
+
+  const handleDeleteStudent = (student) => {
+    const confirmed = window.confirm(`Delete student account for ${student.fullName}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    const nextStudents = deleteStudentAccount(student.id);
+    setStudents(nextStudents);
   };
 
   const handleUpdateBook = (event) => {
@@ -260,6 +352,7 @@ function AdminDashboard() {
       author: manageBookForm.author.trim(),
       image: manageBookForm.image,
       status: manageBookForm.status,
+      category: manageBookForm.category,
       copies: manageBookForm.copies,
     });
 
@@ -311,12 +404,32 @@ function AdminDashboard() {
         </div>
 
         <nav className="space-y-2 p-4">
-          <MenuItem label="Dashboard" active theme={theme} />
-          <MenuItem label="Books" theme={theme} />
+          <MenuItem
+            label="Dashboard"
+            active={activeSection === "dashboard"}
+            theme={theme}
+            onClick={handleOpenDashboard}
+          />
+          <MenuItem
+            label="Books"
+            active={activeSection === "books"}
+            theme={theme}
+            onClick={handleOpenBooks}
+          />
           <MenuItem label="Requests" theme={theme} />
-          <MenuItem label="Students" theme={theme} />
+          <MenuItem
+            label="Students"
+            active={activeSection === "students"}
+            theme={theme}
+            onClick={handleOpenStudents}
+          />
           <MenuItem label="Announcements" theme={theme} />
-          <MenuItem label="Reports" theme={theme} />
+          <MenuItem
+            label="Reports"
+            active={activeSection === "reports"}
+            theme={theme}
+            onClick={handleOpenReports}
+          />
           <MenuItem label="Settings" theme={theme} />
         </nav>
       </aside>
@@ -412,6 +525,8 @@ function AdminDashboard() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          {activeSection === "dashboard" ? (
+            <>
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {stats.map((stat) => (
               <article
@@ -458,6 +573,7 @@ function AdminDashboard() {
 
                 <button
                   type="button"
+                  onClick={handleOpenBooks}
                   className={`rounded-xl border px-4 py-2 text-sm font-medium shadow-sm transition hover:-translate-y-0.5 ${
                     theme === "dark"
                       ? "border-slate-700 bg-slate-950 text-slate-100 hover:bg-slate-800"
@@ -503,19 +619,37 @@ function AdminDashboard() {
                   />
                 </div>
 
-                <input
-                  type="number"
-                  name="copies"
-                  min="1"
-                  value={bookForm.copies}
-                  onChange={handleBookFormChange}
-                  placeholder="Number of copies"
-                  className={`rounded-xl border px-3 py-2 text-sm shadow-sm outline-none transition focus:ring-4 ${
-                    theme === "dark"
-                      ? "border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-500/20"
-                      : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-slate-500 focus:ring-slate-200"
-                  }`}
-                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select
+                    name="category"
+                    value={bookForm.category}
+                    onChange={handleBookFormChange}
+                    className={`rounded-xl border px-3 py-2 text-sm shadow-sm outline-none transition focus:ring-4 ${
+                      theme === "dark"
+                        ? "border-slate-700 bg-slate-900 text-slate-100 focus:border-cyan-400 focus:ring-cyan-500/20"
+                        : "border-gray-300 bg-white text-gray-900 focus:border-slate-500 focus:ring-slate-200"
+                    }`}
+                  >
+                    {COURSE_CATEGORIES.filter((category) => category !== "All").map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    name="copies"
+                    min="1"
+                    value={bookForm.copies}
+                    onChange={handleBookFormChange}
+                    placeholder="Number of copies"
+                    className={`rounded-xl border px-3 py-2 text-sm shadow-sm outline-none transition focus:ring-4 ${
+                      theme === "dark"
+                        ? "border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-500/20"
+                        : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-slate-500 focus:ring-slate-200"
+                    }`}
+                  />
+                </div>
 
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                   <input
@@ -611,6 +745,9 @@ function AdminDashboard() {
                               {book.title}
                             </h3>
                             <p className={theme === "dark" ? "text-xs text-slate-400" : "text-xs text-slate-500"}>{book.author}</p>
+                            <p className={theme === "dark" ? "mt-1 text-xs font-semibold text-cyan-300" : "mt-1 text-xs font-semibold text-slate-600"}>
+                              {getBookCategory(book)}
+                            </p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             <span
@@ -737,6 +874,417 @@ function AdminDashboard() {
               </article>
             </aside>
           </section>
+            </>
+          ) : activeSection === "books" ? (
+            <section className={`rounded-2xl border p-4 shadow-lg backdrop-blur ${
+              theme === "dark"
+                ? "border-slate-800 bg-slate-900/90 shadow-black/20"
+                : "border-white/70 bg-white/90 shadow-slate-200/60"
+            }`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${
+                    theme === "dark" ? "text-slate-400" : "text-slate-500"
+                  }`}>
+                    Book Catalog
+                  </p>
+                  <h2 className={`mt-1 text-xl font-bold ${
+                    theme === "dark" ? "text-slate-100" : "text-slate-900"
+                  }`}>
+                    All Books
+                  </h2>
+                  <p className={theme === "dark" ? "mt-2 text-sm text-slate-400" : "mt-2 text-sm text-slate-500"}>
+                    Browse every book in the system by course category.
+                  </p>
+                </div>
+
+                <div className={`rounded-xl border px-4 py-3 text-sm ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950 text-slate-300" : "border-gray-200 bg-slate-50 text-slate-600"
+                }`}>
+                  Showing {categorizedBooks.length} of {books.length} books
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {COURSE_CATEGORIES.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setActiveCategory(category)}
+                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                      activeCategory === category
+                        ? theme === "dark"
+                          ? "border-cyan-400 bg-cyan-500 text-slate-950"
+                          : "border-slate-900 bg-slate-900 text-white"
+                        : theme === "dark"
+                          ? "border-slate-700 bg-slate-950 text-slate-300 hover:bg-slate-800"
+                          : "border-gray-200 bg-white text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {categorizedBooks.length > 0 ? (
+                  categorizedBooks.map((book) => (
+                    <article
+                      key={book.id}
+                      className={`overflow-hidden rounded-2xl border shadow-lg ${
+                        theme === "dark"
+                          ? "border-slate-800 bg-slate-900 shadow-black/20"
+                          : "border-white/70 bg-white shadow-slate-200/50"
+                      }`}
+                    >
+                      {book.image ? (
+                        <img src={book.image} alt={book.title} className="h-48 w-full object-cover" />
+                      ) : (
+                        <div className={`flex h-48 w-full items-center justify-center text-sm font-medium ${
+                          theme === "dark" ? "bg-slate-800 text-slate-400" : "bg-slate-200 text-slate-500"
+                        }`}>
+                          No cover
+                        </div>
+                      )}
+                      <div className="space-y-3 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className={theme === "dark" ? "text-sm font-semibold text-slate-100" : "text-sm font-semibold text-slate-900"}>
+                              {book.title}
+                            </h3>
+                            <p className={theme === "dark" ? "mt-1 text-xs text-slate-400" : "mt-1 text-xs text-slate-500"}>
+                              {book.author}
+                            </p>
+                          </div>
+                          <span className={theme === "dark" ? "rounded-full bg-cyan-500/10 px-2.5 py-1 text-xs font-semibold text-cyan-200" : "rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"}>
+                            {getBookCategory(book)}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className={theme === "dark" ? "rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-300" : "rounded-xl border border-gray-200 bg-slate-50 p-2 text-slate-600"}>
+                            <span className="block text-[10px] uppercase">Status</span>
+                            <strong>{book.status}</strong>
+                          </div>
+                          <div className={theme === "dark" ? "rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-300" : "rounded-xl border border-gray-200 bg-slate-50 p-2 text-slate-600"}>
+                            <span className="block text-[10px] uppercase">Copies</span>
+                            <strong>{getBookCopies(book)}</strong>
+                          </div>
+                          <div className={theme === "dark" ? "rounded-xl border border-slate-800 bg-slate-950 p-2 text-slate-300" : "rounded-xl border border-gray-200 bg-slate-50 p-2 text-slate-600"}>
+                            <span className="block text-[10px] uppercase">Reserved</span>
+                            <strong>{Number(book.reservedCopies) || 0}</strong>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleViewDescription(book)}
+                            className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+                              theme === "dark"
+                                ? "border-slate-700 bg-slate-950 text-slate-100 hover:bg-slate-800"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                            }`}
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => manageBooks(book)}
+                            className={`rounded-lg border px-3 py-2 text-xs font-medium ${
+                              theme === "dark"
+                                ? "border-slate-700 bg-slate-950 text-slate-100 hover:bg-slate-800"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                            }`}
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className={`rounded-2xl border px-4 py-10 text-center text-sm sm:col-span-2 xl:col-span-3 ${
+                    theme === "dark" ? "border-slate-800 bg-slate-900 text-slate-400" : "border-gray-200 bg-white text-slate-500"
+                  }`}>
+                    No books found in this category.
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : activeSection === "students" ? (
+            <section className={`rounded-2xl border p-4 shadow-lg backdrop-blur ${
+              theme === "dark"
+                ? "border-slate-800 bg-slate-900/90 shadow-black/20"
+                : "border-white/70 bg-white/90 shadow-slate-200/60"
+            }`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${
+                    theme === "dark" ? "text-slate-400" : "text-slate-500"
+                  }`}>
+                    Student Accounts
+                  </p>
+                  <h2 className={`mt-1 text-xl font-bold ${
+                    theme === "dark" ? "text-slate-100" : "text-slate-900"
+                  }`}>
+                    Registered Students
+                  </h2>
+                  <p className={theme === "dark" ? "mt-2 text-sm text-slate-400" : "mt-2 text-sm text-slate-500"}>
+                    View students with accounts, including course, year level, section, and contact details.
+                  </p>
+                </div>
+
+                <div className={`rounded-xl border px-4 py-3 text-sm ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950 text-slate-300" : "border-gray-200 bg-slate-50 text-slate-600"
+                }`}>
+                  {filteredStudents.length} registered student{filteredStudents.length === 1 ? "" : "s"}
+                </div>
+              </div>
+
+              <form className="mt-5 max-w-md" onSubmit={(event) => event.preventDefault()}>
+                <label className={theme === "dark" ? "text-sm font-medium text-slate-300" : "text-sm font-medium text-slate-700"}>
+                  Search Students
+                </label>
+                <input
+                  type="text"
+                  value={studentSearchTerm}
+                  onChange={(event) => setStudentSearchTerm(event.target.value)}
+                  placeholder="Search by name, email, course, year, or section..."
+                  className={`mt-2 w-full rounded-xl border px-4 py-2.5 text-sm shadow-sm outline-none transition focus:ring-4 ${
+                    theme === "dark"
+                      ? "border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-500/20"
+                      : "border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:border-slate-500 focus:ring-slate-200"
+                  }`}
+                />
+              </form>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                <article className={`rounded-xl border p-4 ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950/60" : "border-gray-200 bg-slate-50"
+                }`}>
+                  <span className={theme === "dark" ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
+                    Total Accounts
+                  </span>
+                  <strong className={theme === "dark" ? "mt-2 block text-3xl text-slate-100" : "mt-2 block text-3xl text-slate-900"}>
+                    {students.length}
+                  </strong>
+                </article>
+                <article className={`rounded-xl border p-4 ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950/60" : "border-gray-200 bg-slate-50"
+                }`}>
+                  <span className={theme === "dark" ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
+                    Active
+                  </span>
+                  <strong className={theme === "dark" ? "mt-2 block text-3xl text-slate-100" : "mt-2 block text-3xl text-slate-900"}>
+                    {students.filter((student) => student.status === "Active").length}
+                  </strong>
+                </article>
+                <article className={`rounded-xl border p-4 ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950/60" : "border-gray-200 bg-slate-50"
+                }`}>
+                  <span className={theme === "dark" ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
+                    Courses
+                  </span>
+                  <strong className={theme === "dark" ? "mt-2 block text-3xl text-slate-100" : "mt-2 block text-3xl text-slate-900"}>
+                    {new Set(students.map((student) => student.course)).size}
+                  </strong>
+                </article>
+              </div>
+
+              <div className={`mt-5 overflow-hidden rounded-2xl border ${
+                theme === "dark" ? "border-slate-800" : "border-gray-200"
+              }`}>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
+                    <thead className={theme === "dark" ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-600"}>
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Student</th>
+                        <th className="px-4 py-3 font-semibold">Email</th>
+                        <th className="px-4 py-3 font-semibold">Course</th>
+                        <th className="px-4 py-3 font-semibold">Year</th>
+                        <th className="px-4 py-3 font-semibold">Section</th>
+                        <th className="px-4 py-3 font-semibold">Status</th>
+                        <th className="px-4 py-3 font-semibold">Joined</th>
+                        <th className="px-4 py-3 font-semibold">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${theme === "dark" ? "divide-slate-800 bg-slate-900" : "divide-gray-200 bg-white"}`}>
+                      {filteredStudents.length > 0 ? (
+                        filteredStudents.map((student) => (
+                          <tr key={student.id}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-sm font-bold ${
+                                  theme === "dark" ? "bg-slate-800 text-slate-200" : "bg-slate-200 text-slate-700"
+                                }`}>
+                                  {student.avatar ? (
+                                    <img src={student.avatar} alt={student.fullName} className="h-full w-full object-cover" />
+                                  ) : (
+                                    student.fullName.charAt(0).toUpperCase()
+                                  )}
+                                </div>
+                                <span className="font-medium">{student.fullName}</span>
+                              </div>
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {student.email}
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {student.course}
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {student.yearLevel}
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {student.section}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                {student.status}
+                              </span>
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {formatShortDate(student.joinedAt)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteStudent(student)}
+                                className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="px-4 py-8 text-center text-slate-500" colSpan="8">
+                            No student accounts found yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className={`rounded-2xl border p-4 shadow-lg backdrop-blur ${
+              theme === "dark"
+                ? "border-slate-800 bg-slate-900/90 shadow-black/20"
+                : "border-white/70 bg-white/90 shadow-slate-200/60"
+            }`}>
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.28em] ${
+                    theme === "dark" ? "text-slate-400" : "text-slate-500"
+                  }`}>
+                    Library Reports
+                  </p>
+                  <h2 className={`mt-1 text-xl font-bold ${
+                    theme === "dark" ? "text-slate-100" : "text-slate-900"
+                  }`}>
+                    Borrowed and Reserved Students
+                  </h2>
+                  <p className={theme === "dark" ? "mt-2 text-sm text-slate-400" : "mt-2 text-sm text-slate-500"}>
+                    Summary of students who borrowed or reserved books.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadReportsPdf}
+                  className={`rounded-xl px-4 py-2.5 text-sm font-medium shadow-sm transition hover:-translate-y-0.5 ${
+                    theme === "dark"
+                      ? "bg-cyan-500 text-slate-950 hover:bg-cyan-400"
+                      : "bg-slate-900 text-white hover:bg-slate-800"
+                  }`}
+                >
+                  Download PDF
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <article className={`rounded-xl border p-4 ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950/60" : "border-gray-200 bg-slate-50"
+                }`}>
+                  <span className={theme === "dark" ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
+                    Total Borrowed
+                  </span>
+                  <strong className={theme === "dark" ? "mt-2 block text-3xl text-slate-100" : "mt-2 block text-3xl text-slate-900"}>
+                    {reportCounts.borrowed}
+                  </strong>
+                </article>
+                <article className={`rounded-xl border p-4 ${
+                  theme === "dark" ? "border-slate-800 bg-slate-950/60" : "border-gray-200 bg-slate-50"
+                }`}>
+                  <span className={theme === "dark" ? "text-sm text-slate-400" : "text-sm text-slate-500"}>
+                    Total Reserved
+                  </span>
+                  <strong className={theme === "dark" ? "mt-2 block text-3xl text-slate-100" : "mt-2 block text-3xl text-slate-900"}>
+                    {reportCounts.reserved}
+                  </strong>
+                </article>
+              </div>
+
+              <div className={`mt-5 overflow-hidden rounded-2xl border ${
+                theme === "dark" ? "border-slate-800" : "border-gray-200"
+              }`}>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
+                    <thead className={theme === "dark" ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-600"}>
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Student</th>
+                        <th className="px-4 py-3 font-semibold">Course/Section</th>
+                        <th className="px-4 py-3 font-semibold">Book</th>
+                        <th className="px-4 py-3 font-semibold">Status</th>
+                        <th className="px-4 py-3 font-semibold">Qty</th>
+                        <th className="px-4 py-3 font-semibold">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${theme === "dark" ? "divide-slate-800 bg-slate-900" : "divide-gray-200 bg-white"}`}>
+                      {reports.length > 0 ? (
+                        reports.map((report) => (
+                          <tr key={report.id}>
+                            <td className="px-4 py-3 font-medium">{report.studentName}</td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {report.studentCourse}
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {report.bookTitle}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                report.status === "Borrowed"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-sky-100 text-sky-700"
+                              }`}>
+                                {report.status}
+                              </span>
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {report.quantity}
+                            </td>
+                            <td className={theme === "dark" ? "px-4 py-3 text-slate-300" : "px-4 py-3 text-slate-600"}>
+                              {formatReportDate(report.date)}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td className="px-4 py-8 text-center text-slate-500" colSpan="6">
+                            No borrowed or reserved student records yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
         </main>
       </div>
 
@@ -801,6 +1349,23 @@ function AdminDashboard() {
                   }`}
                 />
               </div>
+
+              <select
+                name="category"
+                value={manageBookForm.category}
+                onChange={handleManageBookFormChange}
+                className={`w-full rounded-xl border px-3 py-2 text-sm shadow-sm outline-none transition focus:ring-4 ${
+                  theme === "dark"
+                    ? "border-slate-700 bg-slate-950 text-slate-100 focus:border-cyan-400 focus:ring-cyan-500/20"
+                    : "border-gray-300 bg-white text-gray-900 focus:border-slate-500 focus:ring-slate-200"
+                }`}
+              >
+                {COURSE_CATEGORIES.filter((category) => category !== "All").map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <select
@@ -932,9 +1497,172 @@ function AdminDashboard() {
   );
 }
 
-function MenuItem({ label, active, theme }) {
+function getBookCategory(book) {
+  return book?.category || "General";
+}
+
+function formatShortDate(date) {
+  if (!date) {
+    return "Not recorded";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(new Date(date));
+}
+
+function formatReportDate(date) {
+  if (!date) {
+    return "Not recorded";
+  }
+
+  return new Intl.DateTimeFormat("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}
+
+function downloadReportsPdf(reports, counts) {
+  const generatedAt = formatReportDate(new Date().toISOString());
+  const rows = reports.length
+    ? reports
+    : [
+        {
+          studentName: "No records",
+          studentCourse: "-",
+          bookTitle: "-",
+          status: "-",
+          quantity: 0,
+          date: new Date().toISOString(),
+        },
+      ];
+  const pdfBlob = new Blob([buildReportsPdf(rows, counts, generatedAt)], {
+    type: "application/pdf",
+  });
+  const url = URL.createObjectURL(pdfBlob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `library-borrow-reserve-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildReportsPdf(rows, counts, generatedAt) {
+  const pageRows = chunkRows(rows, 24);
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+  const pageObjectIds = [];
+
+  pageRows.forEach((page, index) => {
+    const pageObjectId = objects.length + 1;
+    const contentObjectId = pageObjectId + 1;
+    pageObjectIds.push(pageObjectId);
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectId} 0 R >>`,
+    );
+    objects.push(buildPdfStream(buildReportPageContent(page, counts, generatedAt, index + 1, pageRows.length)));
+  });
+
+  objects[1] = `<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageObjectIds.length} >>`;
+
+  return assemblePdf(objects);
+}
+
+function buildReportPageContent(rows, counts, generatedAt, pageNumber, totalPages) {
+  const commands = [
+    pdfText(40, 555, "SCAS Library Borrowed and Reserved Report", 18),
+    pdfText(40, 532, `Generated: ${generatedAt}`, 9),
+    pdfText(580, 532, `Page ${pageNumber} of ${totalPages}`, 9),
+    pdfText(40, 508, `Total Borrowed: ${counts.borrowed}`, 11),
+    pdfText(200, 508, `Total Reserved: ${counts.reserved}`, 11),
+    pdfText(40, 478, "Student", 10),
+    pdfText(180, 478, "Course/Section", 10),
+    pdfText(320, 478, "Book", 10),
+    pdfText(530, 478, "Status", 10),
+    pdfText(620, 478, "Qty", 10),
+    pdfText(680, 478, "Date", 10),
+  ];
+
+  rows.forEach((report, index) => {
+    const y = 455 - index * 17;
+    commands.push(
+      pdfText(40, y, trimPdfText(report.studentName, 22), 8),
+      pdfText(180, y, trimPdfText(report.studentCourse, 20), 8),
+      pdfText(320, y, trimPdfText(report.bookTitle, 32), 8),
+      pdfText(530, y, report.status, 8),
+      pdfText(620, y, String(report.quantity), 8),
+      pdfText(680, y, formatReportDate(report.date), 8),
+    );
+  });
+
+  return commands.join("\n");
+}
+
+function pdfText(x, y, text, size) {
+  return `BT /F1 ${size} Tf ${x} ${y} Td (${escapePdfText(text)}) Tj ET`;
+}
+
+function buildPdfStream(content) {
+  return `<< /Length ${content.length} >>\nstream\n${content}\nendstream`;
+}
+
+function assemblePdf(objects) {
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+
+  objects.forEach((object, index) => {
+    offsets.push(pdf.length);
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return pdf;
+}
+
+function chunkRows(rows, size) {
+  const chunks = [];
+
+  for (let index = 0; index < rows.length; index += size) {
+    chunks.push(rows.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function escapePdfText(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function trimPdfText(value, maxLength) {
+  const text = String(value ?? "");
+  return text.length > maxLength ? `${text.slice(0, maxLength - 3)}...` : text;
+}
+
+function MenuItem({ label, active, theme, onClick }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className={`cursor-pointer rounded-lg px-3 py-2 text-sm transition ${
         active
           ? theme === "dark"
@@ -943,10 +1671,10 @@ function MenuItem({ label, active, theme }) {
           : theme === "dark"
             ? "text-slate-300 hover:bg-slate-800 hover:text-slate-100"
             : "text-gray-700 hover:bg-gray-100"
-      }`}
+      } w-full text-left`}
     >
       {label}
-    </div>
+    </button>
   );
 }
 

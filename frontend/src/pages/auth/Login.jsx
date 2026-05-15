@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getStoredProfile, saveProfile } from "../../services/userProfile";
 
 function Login() {
 
@@ -65,6 +66,13 @@ function Login() {
 
     // Added a short loading delay so users can see the feedback before redirecting.
     setIsSubmitting(true);
+    if (!getStoredProfile()?.fullName) {
+      const identifier = formData.identifier.trim();
+      saveProfile({
+        fullName: identifier.includes("@") ? identifier.split("@")[0] : identifier,
+        email: identifier.includes("@") ? identifier : "",
+      });
+    }
     window.setTimeout(() => {
       navigate("/StudentDashboard");
     }, 1100);

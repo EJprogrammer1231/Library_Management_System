@@ -1,21 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { saveProfile } from "./userProfile";
+import { saveProfile } from "../../services/userProfile";
 
 function CreateAccount() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
+    course: "BSIT",
+    yearLevel: "1st Year",
+    section: "",
     password: "",
     confirmPassword: "",
-    avatar: "",
   });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   // Added loading state so account creation feels deliberate and professional.
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageInputKey, setImageInputKey] = useState(0);
 
   const pageBackground = {
     background:
@@ -36,6 +37,10 @@ function CreateAccount() {
       nextErrors.email = "Email address is required.";
     } else if (!emailPattern.test(values.email.trim())) {
       nextErrors.email = "Enter a valid email address.";
+    }
+
+    if (!values.section.trim()) {
+      nextErrors.section = "Section is required.";
     }
 
     if (!values.password) {
@@ -60,24 +65,6 @@ function CreateAccount() {
     setErrors(validate(nextFormData));
   };
 
-  const handleAvatarChange = (event) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      setFormData((current) => ({ ...current, avatar: "" }));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFormData((current) => ({
-        ...current,
-        avatar: typeof reader.result === "string" ? reader.result : "",
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleBlur = (event) => {
     const { name } = event.target;
     setTouched((current) => ({ ...current, [name]: true }));
@@ -94,6 +81,7 @@ function CreateAccount() {
     setTouched({
       fullName: true,
       email: true,
+      section: true,
       password: true,
       confirmPassword: true,
     });
@@ -107,9 +95,10 @@ function CreateAccount() {
       saveProfile({
         fullName: formData.fullName.trim(),
         email: formData.email.trim(),
-        avatar: formData.avatar,
+        course: formData.course,
+        yearLevel: formData.yearLevel,
+        section: formData.section.trim(),
       });
-      setImageInputKey((current) => current + 1);
       navigate("/login");
     } catch {
       setIsSubmitting(false);
@@ -137,31 +126,6 @@ function CreateAccount() {
           </div>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-700">Profile image</p>
-              <div className="mt-3 flex items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-slate-200">
-                  {formData.avatar ? (
-                    <img
-                      src={formData.avatar}
-                      alt="Profile preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-bold text-slate-500">U</span>
-                  )}
-                </div>
-                <input
-                  key={imageInputKey}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  disabled={isSubmitting}
-                  className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
-                />
-              </div>
-            </div>
-
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
                 Full Name
@@ -204,6 +168,70 @@ function CreateAccount() {
               {touched.email && errors.email && (
                 <p id="email-error" className="mt-2 text-sm text-red-600">
                   {errors.email}
+                </p>
+              )}
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-slate-700">
+                  Course
+                </span>
+                <select
+                  name="course"
+                  value={formData.course}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100"
+                >
+                  <option value="BSIT">BSIT</option>
+                  <option value="BSCS">BSCS</option>
+                  <option value="BSBA">BSBA</option>
+                  <option value="BSED">BSED</option>
+                  <option value="BEED">BEED</option>
+                  <option value="BSTM">BSTM</option>
+                  <option value="BSHM">BSHM</option>
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-slate-700">
+                  Year Level
+                </span>
+                <select
+                  name="yearLevel"
+                  value={formData.yearLevel}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100"
+                >
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                Section
+              </span>
+              <input
+                type="text"
+                name="section"
+                placeholder="Example: A, B, BSIT-2A"
+                value={formData.section}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                disabled={isSubmitting}
+                aria-invalid={Boolean(touched.section && errors.section)}
+                aria-describedby="section-error"
+                className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
+              {touched.section && errors.section && (
+                <p id="section-error" className="mt-2 text-sm text-red-600">
+                  {errors.section}
                 </p>
               )}
             </label>

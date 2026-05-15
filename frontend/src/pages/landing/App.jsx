@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "./assets/Logo.png";
+import logo from "../../assets/Logo.png";
 
 function App() {
   const [open, setOpen] = useState(false);

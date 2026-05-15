@@ -1,16 +1,24 @@
 import { useEffect, useState } from "react";
-import logo from "./assets/Logo.png";
-import { borrowOrReserveBook, getBookCounts, getBookCopies, getStoredBooks } from "./libraryBooks";
-import { getStoredProfile } from "./userProfile";
+import logo from "../../assets/Logo.png";
+import { borrowOrReserveBook, getBookCounts, getBookCopies, getStoredBooks } from "../../services/libraryBooks";
+import { getStoredProfile, saveProfile } from "../../services/userProfile";
+
+const COURSE_CATEGORIES = ["All", "BSIT", "BSCS", "BSBA", "BSED", "BEED", "BSTM", "BSHM", "General"];
 
 function Layout() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [books, setBooks] = useState(() => getStoredBooks());
   const [selectedBook, setSelectedBook] = useState(null);
   const [profile, setProfile] = useState(() => getStoredProfile());
   const [notice, setNotice] = useState("");
+  const [profileEditorOpen, setProfileEditorOpen] = useState(false);
+  const [profileForm, setProfileForm] = useState(() => ({
+    avatar: getStoredProfile()?.avatar || "",
+    yearLevel: getStoredProfile()?.yearLevel || "1st Year",
+  }));
 
   useEffect(() => {
     const syncBooks = () => setBooks(getStoredBooks());
@@ -39,9 +47,14 @@ function Layout() {
 
     return (
       book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
+      book.author.toLowerCase().includes(query) ||
+      getBookCategory(book).toLowerCase().includes(query)
     );
   });
+
+  const categorizedBooks = filteredBooks.filter(
+    (book) => activeCategory === "All" || getBookCategory(book) === activeCategory,
+  );
 
   const borrowedBooks = books.filter((book) => book.status === "Borrowed");
   const bookCounts = getBookCounts(books);
@@ -69,6 +82,9 @@ function Layout() {
     },
   ];
   const greetingName = profile?.fullName || "Students";
+  const studentAcademicLabel = [profile?.course, profile?.yearLevel, profile?.section]
+    .filter(Boolean)
+    .join(" - ") || "Not specified";
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -94,7 +110,7 @@ function Layout() {
       return;
     }
 
-    const updatedBooks = borrowOrReserveBook(book.id, "Borrowed");
+    const updatedBooks = borrowOrReserveBook(book.id, "Borrowed", profile);
     const updatedBook = updatedBooks.find((item) => item.id === book.id);
     setBooks(updatedBooks);
     setSelectedBook(null);
@@ -111,7 +127,7 @@ function Layout() {
       return;
     }
 
-    const updatedBooks = borrowOrReserveBook(book.id, "Reserved");
+    const updatedBooks = borrowOrReserveBook(book.id, "Reserved", profile);
     const updatedBook = updatedBooks.find((item) => item.id === book.id);
     setBooks(updatedBooks);
     setSelectedBook(null);
@@ -130,6 +146,49 @@ function Layout() {
   const handleOpenDashboard = () => {
     setActiveSection("dashboard");
     setOpen(false);
+  };
+
+  const handleOpenProfileEditor = () => {
+    setProfileForm({
+      avatar: profile?.avatar || "",
+      yearLevel: profile?.yearLevel || "1st Year",
+    });
+    setProfileEditorOpen(true);
+  };
+
+  const handleProfileImageChange = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfileForm((current) => ({
+        ...current,
+        avatar: typeof reader.result === "string" ? reader.result : current.avatar,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleProfileYearChange = (event) => {
+    setProfileForm((current) => ({ ...current, yearLevel: event.target.value }));
+  };
+
+  const handleProfileUpdate = (event) => {
+    event.preventDefault();
+
+    const nextProfile = {
+      ...(profile || {}),
+      avatar: profileForm.avatar,
+      yearLevel: profileForm.yearLevel,
+    };
+
+    saveProfile(nextProfile);
+    setProfile(nextProfile);
+    setProfileEditorOpen(false);
   };
 
   return (
@@ -162,7 +221,6 @@ function Layout() {
             active={activeSection === "books"}
             onClick={handleOpenBooks}
           />
-          <MenuItem label="Course Materials" />
           <MenuItem label="Announcements" />
           <MenuItem label="Profile" />
           <MenuItem label="Settings" /> 
@@ -204,7 +262,11 @@ function Layout() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1">
+            <button
+              type="button"
+              onClick={handleOpenProfileEditor}
+              className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1 text-left transition hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-slate-400"
+            >
               <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-400 text-white">
                 {profile?.avatar ? (
                   <img
@@ -220,9 +282,9 @@ function Layout() {
                 <span className="block font-medium text-gray-800">
                   {profile?.fullName || "Student"}
                 </span>
-                <span className="block text-xs text-gray-500">BSIT-2</span>
+                <span className="block text-xs text-gray-500">{studentAcademicLabel}</span>
               </div>
-            </div>
+            </button>
           </div>
 
           <form
@@ -357,6 +419,9 @@ function Layout() {
                           {book.title}
                         </h3>
                         <p className="text-xs text-gray-500">{book.author}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-600">
+                          {getBookCategory(book)}
+                        </p>
                       </div>
 
                       <button
@@ -458,9 +523,26 @@ function Layout() {
                 </button>
               </div>
 
+              <div className="mt-4 flex flex-wrap gap-2">
+                {COURSE_CATEGORIES.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setActiveCategory(category)}
+                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                      activeCategory === category
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-gray-200 bg-white text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
               <section className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredBooks.length > 0 ? (
-                  filteredBooks.map((book) => (
+                {categorizedBooks.length > 0 ? (
+                  categorizedBooks.map((book) => (
                     <article
                       key={book.id}
                       className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
@@ -486,6 +568,9 @@ function Layout() {
                               {book.title}
                             </h3>
                             <p className="text-xs text-gray-500">{book.author}</p>
+                            <p className="mt-1 text-xs font-semibold text-slate-600">
+                              {getBookCategory(book)}
+                            </p>
                           </div>
                           <div className="flex flex-col items-end gap-1">
                             <span
@@ -546,7 +631,7 @@ function Layout() {
                   ))
                 ) : (
                   <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500 sm:col-span-2 lg:col-span-4">
-                    No books found.
+                    No books found in this category.
                   </div>
                 )}
               </section>
@@ -554,6 +639,95 @@ function Layout() {
           )}
         </main>
       </div>
+
+      {profileEditorOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => setProfileEditorOpen(false)}
+        >
+          <form
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
+            onSubmit={handleProfileUpdate}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 pb-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500">
+                  Profile
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-gray-900">
+                  Update Profile
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProfileEditorOpen(false)}
+                className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-5 flex items-center gap-4">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-300 text-xl font-bold text-white">
+                {profileForm.avatar ? (
+                  <img
+                    src={profileForm.avatar}
+                    alt="Profile preview"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span>{(profile?.fullName || "S").charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  {profile?.fullName || "Student"}
+                </p>
+                <p className="text-xs text-gray-500">{profile?.email || "No email"}</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfileImageChange}
+                  className="mt-3 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
+                />
+              </div>
+            </div>
+
+            <label className="mt-5 block">
+              <span className="mb-2 block text-sm font-medium text-gray-700">
+                Year Level
+              </span>
+              <select
+                value={profileForm.yearLevel}
+                onChange={handleProfileYearChange}
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-200"
+              >
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </label>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setProfileEditorOpen(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {selectedBook && (
         <div
@@ -607,6 +781,13 @@ function Layout() {
                   <p className="text-sm font-medium text-gray-500">Status</p>
                   <p className="text-base font-semibold text-gray-900">
                     {getBookCopies(selectedBook) === 0 ? "Not Available" : selectedBook.status}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Course Category</p>
+                  <p className="text-base font-semibold text-gray-900">
+                    {getBookCategory(selectedBook)}
                   </p>
                 </div>
 
@@ -666,6 +847,10 @@ function MenuItem({ label, active, onClick }) {
       {label}
     </button>
   );
+}
+
+function getBookCategory(book) {
+  return book?.category || "General";
 }
 
 export default Layout;
