@@ -7,8 +7,6 @@ import Login from './pages/auth/Login.jsx'
 import CreateAccount from './pages/auth/CreateAccount.jsx'
 import Dashboard from './pages/student/StudentDashboard.jsx'
 import ChooseCategory from './pages/landing/ChooseCategory.jsx'
-import LoginAdmin from './pages/auth/LoginAdmin.jsx'
-import AdminDashboard from './pages/admin/AdminDashboard.jsx'
 import WatchDemo from './pages/landing/WatchDemo.jsx'
 import ReadOverview from './pages/landing/ReadOverview.jsx'
 
@@ -21,8 +19,6 @@ createRoot(document.getElementById('root')).render(
         <Route path="/CreateAccount" element={<CreateAccount />} />
         <Route path="/StudentDashboard" element={<Dashboard />} />
         <Route path="/ChooseCategory" element={<ChooseCategory />} />
-        <Route path="/loginAdmin" element={<LoginAdmin />} />
-        <Route path="/AdminDashboard" element={<AdminDashboard />} />
         <Route path="/Watch-demo" element={<WatchDemo />} />
         <Route path="/Read-overview" element={<ReadOverview />} />
       </Routes>

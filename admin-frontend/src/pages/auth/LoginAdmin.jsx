@@ -163,7 +163,7 @@ function LoginAdmin() {
 
             {showRecoveryHint && (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                If you forgot your password, contact the rigestrar to ressolve the issue.
+                If you forgot your password, contact the registrar to resolve the issue.
               </div>
             )}
 
@@ -191,15 +191,6 @@ function LoginAdmin() {
                 Verifying admin credentials...
               </p>
             )}
-
-            <button
-              type="button"
-              onClick={() => navigate("/ChooseCategory")}
-              disabled={isSubmitting}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              Back to category
-            </button>
           </form>
         </section>
       </div>

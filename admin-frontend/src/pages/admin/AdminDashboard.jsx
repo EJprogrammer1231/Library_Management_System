@@ -10,7 +10,13 @@ import {
   removeBook,
   updateBook,
 } from "../../services/libraryBooks";
-import { deleteStudentAccount, getStoredProfile, getStoredStudents } from "../../services/userProfile";
+import {
+  deleteStudentAccount,
+  getStoredProfile,
+  getStoredStudents,
+  syncRemoteStudents,
+} from "../../services/userProfile";
+
 
 const COURSE_CATEGORIES = ["All", "BSIT", "BSCS", "BSBA", "BSED", "BEED", "BSTM", "BSHM", "General"];
 
@@ -144,14 +150,26 @@ function AdminDashboard() {
     const syncStudents = () => setStudents(getStoredStudents());
     const syncProfile = () => setProfile(getStoredProfile());
 
-    syncBooks();
-    syncReports();
-    syncStudents();
-    syncProfile();
+    const bootstrap = async () => {
+      // fetch latest remote students so StudentDashboard account creation becomes visible in realtime
+      try {
+        await syncRemoteStudents();
+      } catch {
+        // ignore
+      }
+      syncBooks();
+      syncReports();
+      syncStudents();
+      syncProfile();
+    };
+
+    bootstrap();
+
     window.addEventListener("storage", syncBooks);
     window.addEventListener("storage", syncReports);
     window.addEventListener("storage", syncStudents);
     window.addEventListener("storage", syncProfile);
+
     window.addEventListener("scas-library-books-updated", syncBooks);
     window.addEventListener("scas-library-reports-updated", syncReports);
     window.addEventListener("scas-student-accounts-updated", syncStudents);

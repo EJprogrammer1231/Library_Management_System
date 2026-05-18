@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import logo from "../../assets/Logo.png";
-import { borrowOrReserveBook, getBookCounts, getBookCopies, getStoredBooks } from "../../services/libraryBooks";
+import { borrowOrReserveBook, getBookCounts, getBookCopies, getStoredBooks, syncRemoteBooks } from "../../services/libraryBooks";
 import { getStoredProfile, saveProfile } from "../../services/userProfile";
 
 const COURSE_CATEGORIES = ["All", "BSIT", "BSCS", "BSBA", "BSED", "BEED", "BSTM", "BSHM", "General"];
@@ -26,6 +26,7 @@ function Layout() {
 
     syncBooks();
     syncProfile();
+    syncRemoteBooks();
     window.addEventListener("storage", syncBooks);
     window.addEventListener("storage", syncProfile);
     window.addEventListener("scas-library-books-updated", syncBooks);

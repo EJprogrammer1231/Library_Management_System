@@ -1,7 +1,5 @@
-import { useNavigate } from "react-router-dom";
-
 function ChooseCategory() {
-  const navigate = useNavigate();
+  const adminUrl = import.meta.env.VITE_ADMIN_APP_URL || "http://localhost:5174/loginAdmin";
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-900">
@@ -15,7 +13,7 @@ function ChooseCategory() {
           <div className="mt-6 space-y-3">
             <button
               type="button"
-              onClick={() => navigate("/login")}
+              onClick={() => window.location.assign("/login")}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-left text-sm font-medium text-slate-800 transition hover:bg-slate-50"
             >
               Student
@@ -23,7 +21,7 @@ function ChooseCategory() {
 
             <button
               type="button"
-              onClick={() => navigate("/loginAdmin")}
+              onClick={() => window.location.assign(adminUrl)}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-left text-sm font-medium text-slate-800 transition hover:bg-slate-50"
             >
               Admin
@@ -32,7 +30,7 @@ function ChooseCategory() {
 
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => window.location.assign("/")}
             className="mt-6 w-full text-center text-sm text-slate-500 hover:underline"
           >
             Back to home

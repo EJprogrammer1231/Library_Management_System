@@ -4,14 +4,19 @@
   "description": "Library Management System with React frontend and Express backend",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm run build",
+    "build": "cd frontend && npm run build && cd ../admin-frontend && npm run build",
     "frontend-dev": "cd frontend && npm run dev",
+    "admin-frontend-dev": "cd admin-frontend && npm run dev",
     "frontend-build": "cd frontend && npm run build",
+    "admin-frontend-build": "cd admin-frontend && npm run build",
     "frontend-preview": "cd frontend && npm run preview",
+    "admin-frontend-preview": "cd admin-frontend && npm run preview",
     "frontend-lint": "cd frontend && npm run lint",
+    "admin-frontend-lint": "cd admin-frontend && npm run lint",
     "backend-start": "cd backend && npm start",
     "dev": "concurrently \"npm run backend-start\" \"npm run frontend-dev\"",
-    "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    "dev-all": "concurrently \"npm run backend-start\" \"npm run frontend-dev\" \"npm run admin-frontend-dev\"",
+    "install-all": "npm install && cd frontend && npm install && cd ../admin-frontend && npm install && cd ../backend && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -1,0 +1,28 @@
+{
+  "books": [],
+  "students": [
+    {
+      "id": "eljaybernaldez10@gmail.com-1779118588806",
+      "fullName": "testing",
+      "email": "eljaybernaldez10@gmail.com",
+      "course": "BSHM",
+      "yearLevel": "2nd Year",
+      "section": "2-A",
+      "avatar": "",
+      "status": "Active",
+      "joinedAt": "2026-05-18T15:36:28.806Z"
+    },
+    {
+      "id": "eljaybernaldez96@gmail.com-1779119394376",
+      "fullName": "Light Porter",
+      "email": "eljaybernaldez96@gmail.com",
+      "course": "BSIT",
+      "yearLevel": "4th Year",
+      "section": "2-B",
+      "avatar": "",
+      "status": "Active",
+      "joinedAt": "2026-05-18T15:49:54.376Z"
+    }
+  ],
+  "reports": []
+}
