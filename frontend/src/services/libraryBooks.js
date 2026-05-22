@@ -94,34 +94,43 @@ async function fetchJson(path, options = {}) {
   }
 }
 
-function saveRemoteBooks(books) {
+async function saveRemoteBooks(books) {
   if (!canUseApi()) {
-    return;
+    return null;
   }
 
-  fetchJson("/api/books-state", {
+  return fetchJson("/api/books-state", {
     method: "POST",
     body: JSON.stringify(books),
-  }).catch(() => {});
+  });
 }
 
-export async function syncRemoteBooks() {
+
+export async function syncRemoteBooks(force = true) {
   const remoteBooks = await fetchJson("/api/books");
   if (Array.isArray(remoteBooks)) {
-    saveBooks(remoteBooks);
+    if (force) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteBooks));
+      dispatchUpdate("scas-library-books-updated");
+    }
+    return remoteBooks;
   }
+  return null;
 }
 
-function saveRemoteReports(reports) {
+
+
+async function saveRemoteReports(reports) {
   if (!canUseApi()) {
-    return;
+    return null;
   }
 
-  fetchJson("/api/reports-state", {
+  return fetchJson("/api/reports-state", {
     method: "POST",
     body: JSON.stringify(reports),
-  }).catch(() => {});
+  });
 }
+
 
 export async function syncRemoteReports() {
   const remoteReports = await fetchJson("/api/reports");
@@ -156,6 +165,44 @@ function dispatchUpdate(eventName) {
   notifyStorageSync();
 }
 
+async function seedBooksIfEmpty(remoteBooks) {
+  if (!Array.isArray(remoteBooks) || remoteBooks.length > 0) {
+    return remoteBooks;
+  }
+
+  const seeded = initialBooks.map((b) => ({
+    ...b,
+    // ensure ids align with schema expectations
+    id: b.id ?? undefined,
+  }));
+
+  // persist to backend
+  const result = await fetchJson("/api/books-state", {
+    method: "POST",
+    body: JSON.stringify(seeded),
+  });
+
+  if (Array.isArray(result) && result.length > 0) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+    dispatchUpdate("scas-library-books-updated");
+    return result;
+  }
+
+  return seeded;
+}
+
+export async function getBooks() {
+  // backend-first: try backend, seed if empty, then fallback to localStorage.
+  const remoteBooks = await syncRemoteBooks(true);
+  if (Array.isArray(remoteBooks) && remoteBooks.length > 0) {
+    return remoteBooks;
+  }
+
+  // if backend returned empty, seed
+  const seeded = await seedBooksIfEmpty(remoteBooks);
+  return Array.isArray(seeded) ? seeded : getStoredBooks();
+}
+
 export function getStoredBooks() {
   if (!canUseStorage()) {
     return initialBooks;
@@ -166,6 +213,8 @@ export function getStoredBooks() {
     if (!raw) {
       return initialBooks;
     }
+
+
 
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
@@ -178,19 +227,36 @@ export function getStoredBooks() {
   }
 }
 
-export function saveBooks(books) {
-  if (!canUseStorage()) {
-    return;
-  }
-
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
-  dispatchUpdate("scas-library-books-updated");
-  saveRemoteBooks(books);
+async function saveBooksToBackend(books) {
+  const result = await saveRemoteBooks(books);
+  return Array.isArray(result) ? result : null;
 }
 
-export function addBook(book) {
-  const currentBooks = getStoredBooks();
+export async function saveBooks(books) {
+  if (!canUseStorage()) {
+    return saveBooksToBackend(books);
+  }
+
+  // Backend-first for correctness; localStorage becomes cache.
+  const saved = await saveBooksToBackend(books);
+  const nextCache = saved || books;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextCache));
+  dispatchUpdate("scas-library-books-updated");
+  return nextCache;
+}
+
+
+
+
+
+
+
+export async function addBook(book) {
+  const currentBooks = await getBooks();
+
   const nextCopies = parseCopies(book.copies, 1);
+
+
   const nextBooks = [
     ...currentBooks,
     {
@@ -207,39 +273,39 @@ export function addBook(book) {
     },
   ];
 
-  saveBooks(nextBooks);
+  await saveBooks(nextBooks);
   return nextBooks;
 }
 
-export function removeBook(bookId) {
+export async function removeBook(bookId) {
   const currentBooks = getStoredBooks();
   const nextBooks = currentBooks.filter((book) => book.id !== bookId);
 
-  saveBooks(nextBooks);
+  await saveBooks(nextBooks);
   return nextBooks;
 }
 
-export function updateBook(bookId, updates) {
+export async function updateBook(bookId, updates) {
   const currentBooks = getStoredBooks();
   const nextBooks = currentBooks.map((book) =>
     book.id === bookId ? applyBookUpdates(book, updates) : book,
   );
 
-  saveBooks(nextBooks);
+  await saveBooks(nextBooks);
   return nextBooks;
 }
 
-export function updateBookStatus(bookId, status) {
+export async function updateBookStatus(bookId, status) {
   const currentBooks = getStoredBooks();
   const nextBooks = currentBooks.map((book) =>
     book.id === bookId ? { ...book, status } : book,
   );
 
-  saveBooks(nextBooks);
+  await saveBooks(nextBooks);
   return nextBooks;
 }
 
-export function borrowOrReserveBook(bookId, status, student = null) {
+export async function borrowOrReserveBook(bookId, status, student = null) {
   const currentBooks = getStoredBooks();
   let reportRecord = null;
   const nextBooks = currentBooks.map((book) => {
@@ -265,13 +331,14 @@ export function borrowOrReserveBook(bookId, status, student = null) {
     };
   });
 
-  saveBooks(nextBooks);
+  await saveBooks(nextBooks);
 
   if (canUseStorage()) {
     if (reportRecord) {
-      saveBorrowReserveReport(reportRecord);
+      await saveBorrowReserveReport(reportRecord);
     }
   }
+
 
   return nextBooks;
 }
@@ -348,13 +415,15 @@ function getStoredReportRecords() {
   }
 }
 
-function saveBorrowReserveReport(report) {
+async function saveBorrowReserveReport(report) {
   const reports = getStoredReportRecords();
   const nextReports = [report, ...reports];
   window.localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(nextReports));
   dispatchUpdate("scas-library-reports-updated");
-  saveRemoteReports(nextReports);
+  await saveRemoteReports(nextReports);
 }
+
+
 
 function createBorrowReserveReport(book, status, student) {
   const studentName = student?.fullName || student?.name || student?.email || "Unknown Student";

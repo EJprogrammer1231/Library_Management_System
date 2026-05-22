@@ -44,13 +44,18 @@ function saveRemoteStudents(students) {
   }).catch(() => {});
 }
 
-export async function syncRemoteStudents() {
+export async function syncRemoteStudents(force = true) {
   const remoteStudents = await fetchJson("/api/students");
   if (Array.isArray(remoteStudents)) {
-    window.localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(remoteStudents));
-    dispatchUpdate("scas-student-accounts-updated");
+    if (force) {
+      window.localStorage.setItem(STUDENTS_STORAGE_KEY, JSON.stringify(remoteStudents));
+      dispatchUpdate("scas-student-accounts-updated");
+    }
+    return remoteStudents;
   }
+  return null;
 }
+
 
 /**
  * Fire a synthetic storage notification for tabs on the same origin.
@@ -103,6 +108,7 @@ export function saveProfile(profile) {
   if (!canUseStorage()) {
     return;
   }
+
 
   const nextProfile = {
     ...profile,
